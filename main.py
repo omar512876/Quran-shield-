@@ -5,12 +5,24 @@ import os
 import librosa
 import numpy as np
 from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydub import AudioSegment
 from typing import Optional
 from urllib.parse import urlparse
 
 app = FastAPI(title="Audio Analysis API")
+
+# Allow the local frontend to call this API from any origin.
+# This is safe for a local development environment.
+# In production, replace ["*"] with your actual frontend origin, e.g.:
+#   allow_origins=["https://your-frontend-domain.com"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["POST", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 # Spectral centroid threshold (in Hz) for music vs. speech classification.
 # Typical speech sits below ~2,000 Hz while music tends to be higher.

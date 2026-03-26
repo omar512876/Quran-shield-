@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quran Shield – Audio Analyzer</title>
+
+  <!-- =====================================================================
+       STYLES
+       A simple, centered layout that is easy to read on any screen size.
+       ===================================================================== -->
+  <style>
+    /* Reset and base font */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    /* Main card container */
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+      width: 100%;
+      max-width: 600px;
+      padding: 2rem;
+    }
+
+    /* Page title */
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+      color: #1a202c;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #718096;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Divider between the two input sections */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1.25rem 0;
+      color: #a0aec0;
+      font-size: 0.85rem;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    /* Form section labels */
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: #4a5568;
+    }
+
+    /* File input */
+    input[type="file"] {
+      display: block;
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      background: #f7fafc;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    input[type="file"]:focus {
+      outline: 2px solid #4299e1;
+      outline-offset: 2px;
+    }
+
+    /* Text input (URL) */
+    input[type="url"] {
+      display: block;
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      transition: border-color 0.2s;
+    }
+
+    input[type="url"]:focus {
+      outline: none;
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    }
+
+    /* Analyze button */
+    button#analyzeBtn {
+      display: block;
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      background: #3182ce;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button#analyzeBtn:hover:not(:disabled) {
+      background: #2b6cb0;
+    }
+
+    button#analyzeBtn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    button#analyzeBtn:disabled {
+      background: #90cdf4;
+      cursor: not-allowed;
+    }
+
+    /* Result area */
+    #result {
+      margin-top: 1.75rem;
+    }
+
+    /* Error message box */
+    .error-box {
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      color: #c53030;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Formatted result card */
+    .result-card {
+      background: #f0fff4;
+      border: 1px solid #9ae6b4;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+
+    /* Prediction badge (big label at the top of results) */
+    .prediction-badge {
+      display: inline-block;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+      text-transform: capitalize;
+    }
+
+    .badge-music {
+      background: #ebf8ff;
+      color: #2b6cb0;
+    }
+
+    .badge-speech {
+      background: #faf5ff;
+      color: #6b46c1;
+    }
+
+    .badge-url {
+      background: #fffff0;
+      color: #744210;
+    }
+
+    /* Detail rows */
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+
+    .details-table td {
+      padding: 0.35rem 0.5rem;
+    }
+
+    .details-table td:first-child {
+      font-weight: 600;
+      color: #4a5568;
+      width: 50%;
+    }
+
+    /* Raw JSON toggle section */
+    details {
+      margin-top: 0.75rem;
+    }
+
+    summary {
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: #718096;
+      user-select: none;
+    }
+
+    summary:hover {
+      color: #4a5568;
+    }
+
+    pre {
+      background: #2d3748;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      margin-top: 0.5rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Loading spinner shown while the request is in-flight */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255, 255, 255, 0.4);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =====================================================================
+       HTML STRUCTURE
+       ===================================================================== -->
+  <div class="card">
+    <h1>🛡️ Quran Shield</h1>
+    <p class="subtitle">Audio Analysis – detect music vs. speech in a file or YouTube URL</p>
+
+    <!-- ── File upload section ── -->
+    <label for="audioFile">Upload an audio file</label>
+    <input
+      type="file"
+      id="audioFile"
+      accept="audio/*,video/*"
+      aria-label="Upload audio file"
+    />
+
+    <div class="divider">OR</div>
+
+    <!-- ── URL section ── -->
+    <label for="youtubeUrl">YouTube / audio URL</label>
+    <input
+      type="url"
+      id="youtubeUrl"
+      placeholder="https://www.youtube.com/watch?v=..."
+      aria-label="YouTube or audio URL"
+    />
+
+    <!-- ── Submit button ── -->
+    <button id="analyzeBtn" type="button">Analyze</button>
+
+    <!-- ── Result display area ── -->
+    <div id="result" role="region" aria-live="polite"></div>
+  </div>
+
+  <!-- =====================================================================
+       JAVASCRIPT
+       Plain vanilla JS — no frameworks required.
+       ===================================================================== -->
+  <script>
+    // -----------------------------------------------------------------
+    // Configuration
+    // -----------------------------------------------------------------
+    // Base URL of the FastAPI backend.
+    // Change this to match where your server is actually running.
+    // For a local development setup, the default is http://127.0.0.1:8000.
+    // If you are serving this file from the same host as the backend you can
+    // use a relative path like "/analyze" instead.
+    const API_URL = "http://127.0.0.1:8000/analyze";
+
+    // -----------------------------------------------------------------
+    // DOM references
+    // -----------------------------------------------------------------
+    const fileInput   = document.getElementById("audioFile");
+    const urlInput    = document.getElementById("youtubeUrl");
+    const analyzeBtn  = document.getElementById("analyzeBtn");
+    const resultArea  = document.getElementById("result");
+
+    // -----------------------------------------------------------------
+    // Helper: show an error message inside the result area
+    // -----------------------------------------------------------------
+    function showError(message) {
+      resultArea.innerHTML = `
+        <div class="error-box">
+          ⚠️ ${escapeHtml(message)}
+        </div>
+      `;
+    }
+
+    // -----------------------------------------------------------------
+    // Helper: escape HTML special characters to prevent XSS when
+    // inserting user/server data into innerHTML
+    // -----------------------------------------------------------------
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // -----------------------------------------------------------------
+    // Helper: render a nicely formatted result card from the API response
+    // -----------------------------------------------------------------
+    function showResult(data) {
+      // Determine the prediction badge style
+      let badgeClass = "badge-url";
+      if (data.prediction === "music")  badgeClass = "badge-music";
+      if (data.prediction === "speech") badgeClass = "badge-speech";
+
+      // Build rows for numeric details when present
+      let detailRows = "";
+      if (data.details) {
+        const centroid = data.details.spectral_centroid;
+        const zcr      = data.details.zcr;
+
+        if (centroid !== undefined) {
+          detailRows += `
+            <tr>
+              <td>Spectral Centroid</td>
+              <td>${centroid.toFixed(2)} Hz</td>
+            </tr>`;
+        }
+        if (zcr !== undefined) {
+          detailRows += `
+            <tr>
+              <td>Zero-Crossing Rate</td>
+              <td>${zcr.toFixed(6)}</td>
+            </tr>`;
+        }
+      }
+
+      // Show the source URL if this was a URL-based request
+      let urlRow = "";
+      if (data.url) {
+        urlRow = `
+          <tr>
+            <td>URL</td>
+            <td style="word-break:break-all;">${escapeHtml(data.url)}</td>
+          </tr>`;
+      }
+
+      // Prediction label (fall back to "url response" when no prediction key)
+      const predictionLabel = data.prediction
+        ? data.prediction
+        : (data.source === "url" ? "URL submitted" : "Unknown");
+
+      // Raw JSON (pretty-printed) for the collapsible section
+      const rawJson = JSON.stringify(data, null, 2);
+
+      resultArea.innerHTML = `
+        <div class="result-card">
+          <span class="prediction-badge ${badgeClass}">${escapeHtml(predictionLabel)}</span>
+
+          ${detailRows || urlRow ? `
+          <table class="details-table">
+            <tbody>
+              ${detailRows}
+              ${urlRow}
+            </tbody>
+          </table>` : ""}
+
+          <!-- Collapsible raw JSON section -->
+          <details>
+            <summary>Show raw JSON response</summary>
+            <pre>${escapeHtml(rawJson)}</pre>
+          </details>
+        </div>
+      `;
+    }
+
+    // -----------------------------------------------------------------
+    // Main click handler
+    // -----------------------------------------------------------------
+    analyzeBtn.addEventListener("click", async () => {
+      // Clear any previous result
+      resultArea.innerHTML = "";
+
+      const file = fileInput.files[0];       // File object or undefined
+      const url  = urlInput.value.trim();    // String or ""
+
+      // Validate: at least one input must be provided
+      if (!file && !url) {
+        showError("Please upload an audio file or enter a URL before clicking Analyze.");
+        return;
+      }
+
+      // Show loading state on the button
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = '<span class="spinner"></span>Analyzing…';
+
+      try {
+        let response;
+
+        if (file) {
+          // ── Case 1: file uploaded ──
+          // Send as multipart/form-data so the backend can receive the
+          // UploadFile parameter.  The browser sets the correct
+          // Content-Type boundary automatically when using FormData.
+          const formData = new FormData();
+          formData.append("file", file);
+
+          response = await fetch(API_URL, {
+            method: "POST",
+            body: formData,
+            // Do NOT set Content-Type manually — let the browser do it
+          });
+        } else {
+          // ── Case 2: URL provided ──
+          // The backend expects url as a form field (Form(...)), so we
+          // still send multipart/form-data (not JSON).
+          const formData = new FormData();
+          formData.append("url", url);
+
+          response = await fetch(API_URL, {
+            method: "POST",
+            body: formData,
+          });
+        }
+
+        // Parse the JSON body regardless of HTTP status code
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          // Server returned a non-JSON body (e.g. 500 HTML error page)
+          showError(`Server returned an unexpected response (HTTP ${response.status}).`);
+          return;
+        }
+
+        if (!response.ok) {
+          // The server responded with a 4xx / 5xx status and an error field
+          const msg = data.error || data.detail || `HTTP error ${response.status}`;
+          showError(msg);
+          return;
+        }
+
+        // Success — render the formatted result
+        showResult(data);
+
+      } catch (err) {
+        // fetch() itself threw, meaning the server is unreachable,
+        // there is a network issue, or a CORS error occurred.
+        showError(
+          "Could not reach the backend. Make sure the server is running at " +
+          API_URL + " and that CORS is enabled."
+        );
+      } finally {
+        // Always re-enable the button
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = "Analyze";
+      }
+    });
+
+    // -----------------------------------------------------------------
+    // UX: clear the URL field when a file is chosen (and vice-versa)
+    // so the user doesn't accidentally submit both
+    // -----------------------------------------------------------------
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        urlInput.value = "";
+      }
+    });
+
+    urlInput.addEventListener("input", () => {
+      if (urlInput.value.trim()) {
+        fileInput.value = "";
+      }
+    });
+  </script>
+</body>
+</html>
