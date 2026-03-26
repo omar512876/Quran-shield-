@@ -1,3 +1,6 @@
 fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
 python-multipart>=0.0.9
+librosa>=0.10.0
+pydub>=0.25.1
+ffmpeg-python>=0.2.0
