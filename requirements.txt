@@ -1,7 +1,10 @@
 fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
 python-multipart>=0.0.9
+numpy>=1.24.0
 librosa>=0.10.0
 pydub>=0.25.1
-ffmpeg-python>=0.2.0
+# ffmpeg-python is a Python API wrapper and is NOT required by this project.
+# You must have the system `ffmpeg` binary installed separately
+# (e.g. `apt install ffmpeg` on Debian/Ubuntu, `brew install ffmpeg` on macOS).
 yt-dlp>=2024.1.0

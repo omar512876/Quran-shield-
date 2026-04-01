@@ -1,4 +1,6 @@
+import glob
 import io
+import logging
 import os
 import shutil
 import tempfile
@@ -15,6 +17,8 @@ from fastapi.staticfiles import StaticFiles
 from pydub import AudioSegment
 
 app = FastAPI(title="Quran Shield — Audio Analysis API")
+
+logger = logging.getLogger("quran_shield")
 
 # ── Fix: mount frontend at /app, not / (avoids clobbering API routes) ──────────
 app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
@@ -99,8 +103,10 @@ def extract_features(y: np.ndarray, sr: int) -> dict:
 
     # ── Tempo ───────────────────────────────────────────────────────────────
     # Beat tracker. Music has a clear BPM; Quran recitation is arrhythmic.
+    # np.squeeze handles both scalar and 0-d/1-element ndarray returns
+    # (librosa ≥ 0.10 may return a 0-d array).
     tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-    tempo = float(tempo)
+    tempo = float(np.squeeze(tempo))
 
     # ── Onset strength ──────────────────────────────────────────────────────
     # Detects sudden energy bursts (drum hits, note onsets).
@@ -309,9 +315,11 @@ def _download_youtube_to_wav(url: str) -> tuple[str, str]:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
 
-    wav_path = os.path.join(tmp_dir, "audio.wav")
-    if not os.path.exists(wav_path):
+    # yt-dlp may produce "audio.webm.wav", "audio.m4a.wav", etc. — search for any WAV.
+    wav_candidates = glob.glob(os.path.join(tmp_dir, "*.wav"))
+    if not wav_candidates:
         raise FileNotFoundError("yt-dlp downloaded the file but WAV conversion failed.")
+    wav_path = wav_candidates[0]
 
     return wav_path, tmp_dir
 
@@ -347,15 +355,17 @@ async def analyze(
         try:
             audio_bytes = await file.read()
         except Exception as exc:
-            return JSONResponse(400, {"error": f"Could not read uploaded file: {exc}"})
+            logger.warning("Failed to read uploaded file: %s", exc, exc_info=True)
+            return JSONResponse(status_code=400, content={"error": "Could not read the uploaded file."})
 
         if not audio_bytes:
-            return JSONResponse(400, {"error": "Uploaded file is empty."})
+            return JSONResponse(status_code=400, content={"error": "Uploaded file is empty."})
 
         try:
             audio_segment = AudioSegment.from_file(io.BytesIO(audio_bytes))
         except Exception as exc:
-            return JSONResponse(422, {"error": f"Could not decode audio: {exc}"})
+            logger.warning("Failed to decode audio: %s", exc, exc_info=True)
+            return JSONResponse(status_code=422, content={"error": "Could not decode the audio file. Make sure it is a valid audio format."})
 
         tmp_path = None
         try:
@@ -367,7 +377,8 @@ async def analyze(
             result["filename"] = file.filename
             return result
         except Exception as exc:
-            return JSONResponse(500, {"error": f"Analysis failed: {exc}"})
+            logger.error("Audio analysis failed: %s", exc, exc_info=True)
+            return JSONResponse(status_code=500, content={"error": "Audio analysis failed. Please try again."})
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
@@ -375,7 +386,7 @@ async def analyze(
     # ── Branch 2: YouTube URL ────────────────────────────────────────────────
     if url is not None:
         if not _is_valid_url(url):
-            return JSONResponse(422, {"error": "URL is not valid (must start with http/https)."})
+            return JSONResponse(status_code=422, content={"error": "URL is not valid (must start with http/https)."})
 
         tmp_dir = None
         try:
@@ -385,10 +396,11 @@ async def analyze(
             result["url"] = url
             return result
         except Exception as exc:
-            return JSONResponse(500, {"error": f"YouTube analysis failed: {exc}"})
+            logger.error("YouTube analysis failed for %s: %s", url, exc, exc_info=True)
+            return JSONResponse(status_code=500, content={"error": "Failed to download or analyse the YouTube URL. Please check the URL and try again."})
         finally:
             if tmp_dir and os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir, ignore_errors=True)
 
     # ── Neither provided ─────────────────────────────────────────────────────
-    return JSONResponse(400, {"error": "Please provide an audio file or a YouTube URL."})
+    return JSONResponse(status_code=400, content={"error": "Please provide an audio file or a YouTube URL."})
