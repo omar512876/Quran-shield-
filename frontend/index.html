@@ -298,12 +298,9 @@
     // -----------------------------------------------------------------
     // Configuration
     // -----------------------------------------------------------------
-    // Base URL of the FastAPI backend.
-    // Change this to match where your server is actually running.
-    // For a local development setup, the default is http://127.0.0.1:8000.
-    // If you are serving this file from the same host as the backend you can
-    // use a relative path like "/analyze" instead.
-    const API_URL = "http://127.0.0.1:8000/analyze";
+    // Use a relative URL so the frontend works regardless of which host
+    // or port the FastAPI server is running on.
+    const API_URL = "/analyze";
 
     // -----------------------------------------------------------------
     // DOM references
@@ -343,20 +340,20 @@
     function showResult(data) {
       // Determine the prediction badge style
       let badgeClass = "badge-url";
-      if (data.prediction === "music")  badgeClass = "badge-music";
-      if (data.prediction === "speech") badgeClass = "badge-speech";
+      if (data.prediction === "music")         badgeClass = "badge-music";
+      if (data.prediction === "quran/speech")  badgeClass = "badge-speech";
 
-      // Build rows for numeric details when present
+      // Build rows for numeric details when present.
+      // The API returns features under the "features" key.
       let detailRows = "";
-      if (data.details) {
-        const centroid = data.details.spectral_centroid;
-        const zcr      = data.details.zcr;
+      if (data.features) {
+        const { spectral_centroid, zcr, tempo, chroma_std, onset_std } = data.features;
 
-        if (centroid !== undefined) {
+        if (spectral_centroid !== undefined) {
           detailRows += `
             <tr>
               <td>Spectral Centroid</td>
-              <td>${centroid.toFixed(2)} Hz</td>
+              <td>${spectral_centroid.toFixed(2)} Hz</td>
             </tr>`;
         }
         if (zcr !== undefined) {
@@ -366,6 +363,38 @@
               <td>${zcr.toFixed(6)}</td>
             </tr>`;
         }
+        if (tempo !== undefined) {
+          detailRows += `
+            <tr>
+              <td>Tempo</td>
+              <td>${tempo.toFixed(1)} BPM</td>
+            </tr>`;
+        }
+        if (chroma_std !== undefined) {
+          detailRows += `
+            <tr>
+              <td>Chroma Std</td>
+              <td>${chroma_std.toFixed(4)}</td>
+            </tr>`;
+        }
+        if (onset_std !== undefined) {
+          detailRows += `
+            <tr>
+              <td>Onset Strength Std</td>
+              <td>${onset_std.toFixed(4)}</td>
+            </tr>`;
+        }
+      }
+
+      // Confidence row
+      let confidenceRow = "";
+      if (data.confidence !== undefined) {
+        const pct = (data.confidence * 100).toFixed(1);
+        confidenceRow = `
+          <tr>
+            <td>Confidence</td>
+            <td>${pct}%</td>
+          </tr>`;
       }
 
       // Show the source URL if this was a URL-based request
@@ -390,9 +419,10 @@
         <div class="result-card">
           <span class="prediction-badge ${badgeClass}">${escapeHtml(predictionLabel)}</span>
 
-          ${detailRows || urlRow ? `
+          ${confidenceRow || detailRows || urlRow ? `
           <table class="details-table">
             <tbody>
+              ${confidenceRow}
               ${detailRows}
               ${urlRow}
             </tbody>
