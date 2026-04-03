@@ -1,0 +1,6 @@
+# Don't commit ffmpeg binaries (large files ~160MB)
+*.exe
+*.dll
+
+# But keep this directory structure
+!.gitignore
