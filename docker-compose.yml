@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  quran-shield:
+    build: .
+    container_name: quran-shield
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=INFO
+      - DEBUG=False
+      - CORS_ORIGINS=*
+      - MAX_FILE_SIZE_MB=50
+    volumes:
+      # Persist FFmpeg binaries across container restarts
+      - ffmpeg-cache:/app/backend/bin/ffmpeg
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - quran-shield-network
+
+  # Optional: Add nginx reverse proxy
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: quran-shield-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - quran-shield
+  #   restart: unless-stopped
+  #   networks:
+  #     - quran-shield-network
+
+volumes:
+  ffmpeg-cache:
+    driver: local
+
+networks:
+  quran-shield-network:
+    driver: bridge

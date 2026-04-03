@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "name": "quran-shield",
+  "builds": [
+    {
+      "src": "backend/app/main.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
+    },
+    {
+      "src": "frontend/index_web.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "backend/app/main.py"
+    },
+    {
+      "src": "/app",
+      "dest": "frontend/index_web.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    }
+  ],
+  "functions": {
+    "backend/app/main.py": {
+      "maxDuration": 10,
+      "memory": 1024,
+      "runtime": "python3.11"
+    }
+  },
+  "env": {
+    "LOG_LEVEL": "INFO",
+    "MAX_FILE_SIZE_MB": "25"
+  }
+}

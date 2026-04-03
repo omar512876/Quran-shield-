@@ -1,6 +1,9 @@
 """Audio classification service"""
+import logging
 from typing import Dict, Tuple, List
 from ..config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class AudioClassifier:
@@ -52,7 +55,25 @@ class AudioClassifier:
             - prediction: "music" or "quran/speech"
             - confidence: Float in [0, 1]
             - reasoning: Per-feature breakdown
+            
+        Raises:
+            ValueError: If features dictionary is invalid or missing required keys
         """
+        # Validate input
+        if not features or not isinstance(features, dict):
+            raise ValueError("Features must be a non-empty dictionary")
+        
+        required_features = [
+            "spectral_centroid", "chroma_std", "tempo", "onset_std",
+            "spectral_contrast", "mfcc_delta_mean", "spectral_rolloff", "zcr"
+        ]
+        
+        missing = [f for f in required_features if f not in features]
+        if missing:
+            raise ValueError(f"Missing required features: {', '.join(missing)}")
+        
+        logger.info(f"Classifying audio with {len(features)} features")
+        
         score = 0.0
         reasoning = {}
         
@@ -173,5 +194,7 @@ class AudioClassifier:
         
         # === Make Prediction ===
         prediction = "music" if score > self.threshold else "quran/speech"
+        
+        logger.info(f"Classification result: {prediction} (score={score:.2f}, confidence={confidence:.3f})")
         
         return prediction, round(confidence, 3), reasoning

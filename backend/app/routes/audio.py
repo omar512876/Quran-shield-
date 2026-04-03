@@ -1,18 +1,30 @@
 """Audio analysis route handlers"""
 import logging
 from typing import Optional
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
-from ..services import AudioAnalyzer
-from ..utils import is_valid_url
+from fastapi import APIRouter, File, Form, UploadFile, HTTPException, Request, Depends
+from ..services.audio_analyzer import AudioAnalyzer
+from ..utils.validators import is_valid_url
+from ..config import settings
 
 router = APIRouter(prefix="/api", tags=["Audio Analysis"])
 logger = logging.getLogger(__name__)
 
 
+def get_analyzer(request: Request) -> AudioAnalyzer:
+    """
+    Dependency to get the cached AudioAnalyzer instance.
+    
+    This avoids re-instantiating AudioAnalyzer on every request.
+    """
+    return request.app.state.analyzer
+
+
 @router.post("/analyze")
 async def analyze_audio(
+    request: Request,
     file: Optional[UploadFile] = File(default=None),
     url: Optional[str] = Form(default=None),
+    analyzer: AudioAnalyzer = Depends(get_analyzer),
 ):
     """
     Analyze audio and classify it as 'music' or 'quran/speech'.
@@ -31,6 +43,7 @@ async def analyze_audio(
     
     **Error Responses:**
     - 400: Neither file nor URL provided, or file is empty
+    - 413: File too large
     - 422: Invalid audio format or invalid URL
     - 500: Analysis failed due to internal error
     """
@@ -41,13 +54,30 @@ async def analyze_audio(
             detail="Please provide either an audio file or a YouTube URL."
         )
     
-    analyzer = AudioAnalyzer()
-    
     # === Process File Upload ===
     if file is not None:
         try:
+            # Check Content-Length header BEFORE reading file
+            content_length = request.headers.get("content-length")
+            if content_length:
+                content_length_bytes = int(content_length)
+                max_size_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
+                
+                if content_length_bytes > max_size_bytes:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File too large. Maximum size is {settings.MAX_FILE_SIZE_MB}MB."
+                    )
+            
             # Read file contents
             audio_bytes = await file.read()
+            
+            # Second check: validate actual file size (for chunked uploads without Content-Length)
+            if len(audio_bytes) > settings.MAX_FILE_SIZE_MB * 1024 * 1024:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large. Maximum size is {settings.MAX_FILE_SIZE_MB}MB."
+                )
             
             if not audio_bytes:
                 raise HTTPException(

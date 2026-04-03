@@ -25,14 +25,23 @@ class YouTubeDownloader:
     2. Convert to WAV using pydub with bundled ffmpeg
     """
     
-    def __init__(self):
-        """Initialize the YouTube downloader with ffmpeg configuration"""
+    def __init__(self, ffmpeg_config=None):
+        """Initialize the YouTube downloader with ffmpeg configuration
+        
+        Args:
+            ffmpeg_config: Optional FFmpegConfig instance. If not provided, will get global instance.
+        """
         self.max_duration = 600  # 10 minutes max to avoid huge files
         
-        # Get and configure ffmpeg
-        self.ffmpeg_config = get_ffmpeg_config()
+        # Use provided config or get global instance
+        if ffmpeg_config is not None:
+            self.ffmpeg_config = ffmpeg_config
+        else:
+            self.ffmpeg_config = get_ffmpeg_config()
+            if self.ffmpeg_config.is_available():
+                self.ffmpeg_config.configure_pydub()
+        
         if self.ffmpeg_config.is_available():
-            self.ffmpeg_config.configure_pydub()
             logger.info("✅ YouTubeDownloader initialized with ffmpeg support")
         else:
             logger.warning("⚠️ YouTubeDownloader initialized WITHOUT ffmpeg - downloads may fail!")

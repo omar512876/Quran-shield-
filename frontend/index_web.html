@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Quran Shield - Zero-install web app to detect music vs. Quran recitation in audio files" />
+  <title>Quran Shield – Audio Analyzer (Web App)</title>
+
+  <style>
+    /* === RESET & BASE === */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #2d3748;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    /* === MAIN CONTAINER === */
+    .container {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 700px;
+      padding: 2.5rem;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* === HEADER === */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+      color: #1a202c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #718096;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* === FORM SECTIONS === */
+    .input-section {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #4a5568;
+    }
+
+    input[type="file"] {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px dashed #cbd5e0;
+      border-radius: 8px;
+      background: #f7fafc;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    input[type="file"]:hover {
+      border-color: #4299e1;
+      background: #ebf8ff;
+    }
+
+    input[type="file"]:focus {
+      outline: none;
+      border-color: #3182ce;
+      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    }
+
+    input[type="url"] {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    input[type="url"]:focus {
+      outline: none;
+      border-color: #3182ce;
+      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    }
+
+    input[type="url"]::placeholder {
+      color: #a0aec0;
+    }
+
+    /* === DIVIDER === */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      color: #a0aec0;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+    }
+
+    /* === BUTTON === */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+      box-shadow: none;
+      opacity: 0.6;
+    }
+
+    /* === LOADING SPINNER === */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* === PROGRESS BAR === */
+    .progress-container {
+      margin-top: 1rem;
+      background: #e2e8f0;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+      border-radius: 999px;
+    }
+
+    .progress-text {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #718096;
+      margin-top: 0.5rem;
+    }
+
+    /* === RESULT AREA === */
+    #result {
+      margin-top: 2rem;
+    }
+
+    /* === ERROR BOX === */
+    .error-box {
+      background: #fff5f5;
+      border-left: 4px solid #fc8181;
+      color: #c53030;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.9rem;
+      animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* === SUCCESS BOX === */
+    .result-card {
+      background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+      border: 2px solid #9ae6b4;
+      border-radius: 12px;
+      padding: 1.5rem;
+      animation: fadeIn 0.5s;
+    }
+
+    .result-card.music {
+      background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+      border-color: #fc8181;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .prediction-badge {
+      display: inline-block;
+      padding: 0.5rem 1.2rem;
+      border-radius: 999px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-music {
+      background: linear-gradient(135deg, #fbb6ce 0%, #ed64a6 100%);
+      color: #742a2a;
+    }
+
+    .badge-speech {
+      background: linear-gradient(135deg, #9ae6b4 0%, #48bb78 100%);
+      color: #22543d;
+    }
+
+    /* === DETAILS TABLE === */
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .details-table td {
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .details-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .details-table td:first-child {
+      font-weight: 600;
+      color: #4a5568;
+      width: 45%;
+    }
+
+    .details-table td:last-child {
+      color: #2d3748;
+      font-weight: 500;
+    }
+
+    /* === COLLAPSIBLE JSON === */
+    details {
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+
+    summary {
+      font-size: 0.85rem;
+      color: #718096;
+      font-weight: 600;
+      user-select: none;
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    summary:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #4a5568;
+    }
+
+    pre {
+      background: #2d3748;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      margin-top: 0.5rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.5;
+    }
+
+    /* === INFO BOX === */
+    .info-box {
+      background: #ebf8ff;
+      border-left: 4px solid #4299e1;
+      color: #2c5282;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-box strong {
+      color: #2b6cb0;
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 640px) {
+      .container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      .subtitle {
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <h1>🛡️ Quran Shield</h1>
+      <p class="subtitle">AI-powered audio analysis to detect music vs. Quran recitation</p>
+      <span class="badge">✨ Zero Install • Cloud Powered</span>
+    </div>
+
+    <!-- INFO BOX -->
+    <div class="info-box">
+      <strong>✨ Web App:</strong> No installation needed! Just paste a YouTube link or upload an audio file, and get instant AI-powered classification.
+    </div>
+
+    <!-- FILE UPLOAD -->
+    <div class="input-section">
+      <label for="audioFile">📁 Upload Audio File (MP3, WAV, M4A, etc.)</label>
+      <input
+        type="file"
+        id="audioFile"
+        accept="audio/*,video/*"
+        aria-label="Upload audio file"
+      />
+      <div style="font-size: 0.75rem; color: #718096; margin-top: 0.25rem;">
+        Max size: 50MB
+      </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="divider">OR</div>
+
+    <!-- URL INPUT -->
+    <div class="input-section">
+      <label for="youtubeUrl">🔗 YouTube / Audio URL</label>
+      <input
+        type="url"
+        id="youtubeUrl"
+        placeholder="https://www.youtube.com/watch?v=..."
+        aria-label="YouTube or audio URL"
+      />
+      <div style="font-size: 0.75rem; color: #718096; margin-top: 0.25rem;">
+        Max duration: 10 minutes
+      </div>
+    </div>
+
+    <!-- ANALYZE BUTTON -->
+    <button id="analyzeBtn" class="btn" type="button">
+      🔍 Analyze Audio
+    </button>
+
+    <!-- PROGRESS -->
+    <div id="progress" style="display: none;">
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar" style="width: 0%;"></div>
+      </div>
+      <div class="progress-text" id="progressText">Processing...</div>
+    </div>
+
+    <!-- RESULT AREA -->
+    <div id="result" role="region" aria-live="polite"></div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- JAVASCRIPT -->
+  <!-- ============================================ -->
+  <script>
+    // Configuration - Update this with your deployed backend URL
+    const API_URL = window.location.hostname === 'localhost' 
+      ? "/api/analyze"  // Local development
+      : "/api/analyze";  // Production (same domain) or set full URL here
+
+    const fileInput = document.getElementById("audioFile");
+    const urlInput = document.getElementById("youtubeUrl");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const resultArea = document.getElementById("result");
+    const progressContainer = document.getElementById("progress");
+    const progressBar = document.getElementById("progressBar");
+    const progressText = document.getElementById("progressText");
+
+    // Helper: Escape HTML to prevent XSS
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Helper: Show error message
+    function showError(message) {
+      resultArea.innerHTML = `
+        <div class="error-box">
+          ⚠️ <strong>Error:</strong> ${escapeHtml(message)}
+        </div>
+      `;
+      hideProgress();
+    }
+
+    // Helper: Show progress
+    function showProgress(text = "Processing...") {
+      progressContainer.style.display = "block";
+      progressText.textContent = text;
+      let progress = 0;
+      
+      // Simulate progress (actual progress tracking would need backend support)
+      const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + "%";
+      }, 500);
+      
+      return () => clearInterval(interval);
+    }
+
+    // Helper: Hide progress
+    function hideProgress() {
+      progressContainer.style.display = "none";
+      progressBar.style.width = "0%";
+    }
+
+    // Helper: Complete progress
+    function completeProgress() {
+      progressBar.style.width = "100%";
+      setTimeout(hideProgress, 500);
+    }
+
+    // Helper: Render success result
+    function showResult(data) {
+      const isMusic = data.prediction === "music";
+      const cardClass = isMusic ? "music" : "";
+      const badgeClass = isMusic ? "badge-music" : "badge-speech";
+      const predictionEmoji = isMusic ? "🎵" : "📿";
+      const predictionText = isMusic ? "Music Detected" : "Safe (Quran/Speech)";
+
+      let detailRows = "";
+      if (data.source) {
+        detailRows += `<tr><td>Source</td><td>${escapeHtml(data.source)}</td></tr>`;
+      }
+      if (data.filename) {
+        detailRows += `<tr><td>File</td><td>${escapeHtml(data.filename)}</td></tr>`;
+      }
+      if (data.url) {
+        detailRows += `<tr><td>URL</td><td>${escapeHtml(data.url.substring(0, 50))}...</td></tr>`;
+      }
+      if (data.confidence !== undefined) {
+        const confidencePercent = (data.confidence * 100).toFixed(1);
+        detailRows += `<tr><td>Confidence</td><td>${confidencePercent}%</td></tr>`;
+      }
+      if (data.processing_time_seconds) {
+        detailRows += `<tr><td>Processing Time</td><td>${data.processing_time_seconds}s</td></tr>`;
+      }
+
+      // Feature votes summary
+      let featureVotesSummary = "";
+      if (data.reasoning) {
+        const topFeatures = Object.entries(data.reasoning)
+          .sort((a, b) => Math.abs(b[1].vote) - Math.abs(a[1].vote))
+          .slice(0, 3);
+        
+        featureVotesSummary = topFeatures.map(([name, info]) => {
+          const vote = info.vote > 0 ? `+${info.vote}` : info.vote;
+          const emoji = info.vote > 0 ? "🎵" : "📿";
+          return `<tr><td>${name}</td><td>${emoji} ${vote} (value: ${info.value})</td></tr>`;
+        }).join("");
+      }
+
+      resultArea.innerHTML = `
+        <div class="result-card ${cardClass}">
+          <span class="prediction-badge ${badgeClass}">
+            ${predictionEmoji} ${predictionText}
+          </span>
+          
+          <table class="details-table">
+            ${detailRows}
+          </table>
+
+          ${featureVotesSummary ? `
+            <h3 style="font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #4a5568;">
+              Top Feature Votes:
+            </h3>
+            <table class="details-table">
+              ${featureVotesSummary}
+            </table>
+          ` : ''}
+
+          ${data.features || data.reasoning ? `
+            <details>
+              <summary>📊 View Full Analysis JSON</summary>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </details>
+          ` : ''}
+        </div>
+      `;
+
+      completeProgress();
+    }
+
+    // Main analyze function
+    async function analyzeAudio() {
+      const file = fileInput.files[0];
+      const url = urlInput.value.trim();
+
+      // Validation
+      if (!file && !url) {
+        showError("Please provide either an audio file or a YouTube URL.");
+        return;
+      }
+
+      if (file && url) {
+        showError("Please provide only one input: either a file OR a URL, not both.");
+        return;
+      }
+
+      // Disable button
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
+      resultArea.innerHTML = "";
+      
+      const stopProgress = showProgress(
+        file ? "Uploading and analyzing file..." : "Downloading and analyzing YouTube audio..."
+      );
+
+      try {
+        // Prepare form data
+        const formData = new FormData();
+        if (file) {
+          formData.append("file", file);
+        }
+        if (url) {
+          formData.append("url", url);
+        }
+
+        // Make API request
+        const response = await fetch(API_URL, {
+          method: "POST",
+          body: formData,
+        });
+
+        stopProgress();
+
+        // Handle response
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.detail || 
+            `Server error: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        
+        if (data.success === false) {
+          throw new Error(data.error || data.detail || "Analysis failed");
+        }
+
+        showResult(data);
+
+      } catch (error) {
+        stopProgress();
+        console.error("Analysis error:", error);
+        
+        if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+          showError("Network error. Please check your internet connection and try again.");
+        } else if (error.message.includes("413")) {
+          showError("File too large. Maximum size is 50MB.");
+        } else if (error.message.includes("422")) {
+          showError(error.message || "Invalid input. Please check your file or URL.");
+        } else {
+          showError(error.message || "An unexpected error occurred. Please try again.");
+        }
+      } finally {
+        // Re-enable button
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '🔍 Analyze Audio';
+      }
+    }
+
+    // Event listeners
+    analyzeBtn.addEventListener("click", analyzeAudio);
+
+    // Allow Enter key in URL input
+    urlInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        analyzeAudio();
+      }
+    });
+
+    // Clear opposite input when one is selected
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        urlInput.value = "";
+      }
+    });
+
+    urlInput.addEventListener("input", () => {
+      if (urlInput.value.trim()) {
+        fileInput.value = "";
+      }
+    });
+  </script>
+
+</body>
+</html>
