@@ -369,11 +369,34 @@
   <!-- JAVASCRIPT -->
   <!-- ============================================ -->
   <script>
-    const API_URL = "/api/analyze";
+    // API Configuration
+    // When served from the same origin, use relative URL
+    // For different origins, set BACKEND_URL before loading this script
+    const API_BASE = window.BACKEND_URL || '';
+    const API_URL = `${API_BASE}/api/analyze`;
+    const HEALTH_URL = `${API_BASE}/health`;
+    
     const fileInput = document.getElementById("audioFile");
     const urlInput = document.getElementById("youtubeUrl");
     const analyzeBtn = document.getElementById("analyzeBtn");
     const resultArea = document.getElementById("result");
+
+    // Check backend health on page load
+    async function checkHealth() {
+      try {
+        const response = await fetch(HEALTH_URL, { timeout: 5000 });
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Backend health:', data);
+          if (!data.ffmpeg_available) {
+            showWarning('⚠️ YouTube processing may not be available. File uploads should work.');
+          }
+        }
+      } catch (err) {
+        console.warn('Backend health check failed:', err);
+        showWarning('⚠️ Could not verify backend connection. The app may still work.');
+      }
+    }
 
     // Helper: Escape HTML to prevent XSS
     function escapeHtml(str) {
@@ -382,11 +405,44 @@
       return div.innerHTML;
     }
 
+    // Helper: Show warning message
+    function showWarning(message) {
+      const existingWarning = document.querySelector('.warning-box');
+      if (existingWarning) return; // Don't show multiple warnings
+      
+      const warningDiv = document.createElement('div');
+      warningDiv.className = 'warning-box';
+      warningDiv.innerHTML = `${escapeHtml(message)}`;
+      warningDiv.style.cssText = `
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+      `;
+      document.querySelector('.header').after(warningDiv);
+    }
+
     // Helper: Show error message
     function showError(message) {
       resultArea.innerHTML = `
         <div class="error-box">
           ⚠️ <strong>Error:</strong> ${escapeHtml(message)}
+        </div>
+      `;
+    }
+
+    // Helper: Show loading state with progress
+    function showLoading(message = "Analyzing...") {
+      resultArea.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+          <div class="spinner" style="margin: 0 auto 1rem; width: 40px; height: 40px; border-width: 4px;"></div>
+          <p style="color: #4a5568; font-weight: 500;">${escapeHtml(message)}</p>
+          <p style="color: #718096; font-size: 0.85rem; margin-top: 0.5rem;">
+            This may take a moment for YouTube videos...
+          </p>
         </div>
       `;
     }
@@ -409,6 +465,15 @@
           </tr>`;
       }
 
+      // Processing time
+      if (data.processing_time_seconds !== undefined) {
+        detailRows += `
+          <tr>
+            <td>⏱️ Processing Time</td>
+            <td>${data.processing_time_seconds.toFixed(2)}s</td>
+          </tr>`;
+      }
+
       // Key features
       if (data.features) {
         const { spectral_centroid, tempo, chroma_std } = data.features;
@@ -422,7 +487,7 @@
         if (tempo) {
           detailRows += `
             <tr>
-              <td>⏱️ Tempo</td>
+              <td>🥁 Tempo</td>
               <td>${tempo.toFixed(1)} BPM</td>
             </tr>`;
         }
@@ -488,6 +553,9 @@
       // Show loading state
       analyzeBtn.disabled = true;
       analyzeBtn.innerHTML = '<span class="spinner"></span>Analyzing...';
+      
+      const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
+      showLoading(isYouTube ? "Downloading and analyzing YouTube video..." : "Analyzing audio...");
 
       try {
         const formData = new FormData();
@@ -497,21 +565,28 @@
           formData.append("url", url);
         }
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
+
         const response = await fetch(API_URL, {
           method: "POST",
           body: formData,
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         let data;
         try {
           data = await response.json();
         } catch {
-          showError(`Server returned an unexpected response (HTTP ${response.status}).`);
+          showError(`Server returned an unexpected response (HTTP ${response.status}). Please try again.`);
           return;
         }
 
         if (!response.ok) {
-          const msg = data.detail || data.error || `HTTP error ${response.status}`;
+          // Extract error message from various response formats
+          const msg = data.detail || data.error || data.message || `HTTP error ${response.status}`;
           showError(msg);
           return;
         }
@@ -520,9 +595,19 @@
 
       } catch (err) {
         console.error("Fetch error:", err);
-        showError(
-          "Could not reach the backend. Make sure the server is running and accessible."
-        );
+        
+        if (err.name === 'AbortError') {
+          showError("Request timed out. The video may be too long or the server is busy. Please try a shorter video.");
+        } else if (err.message && err.message.includes('Failed to fetch')) {
+          showError(
+            "Could not reach the backend server. Please ensure:\n" +
+            "1. The server is running\n" +
+            "2. You're accessing from the correct URL\n" +
+            "3. No firewall is blocking the connection"
+          );
+        } else {
+          showError(`An error occurred: ${err.message || 'Unknown error'}`);
+        }
       } finally {
         analyzeBtn.disabled = false;
         analyzeBtn.innerHTML = "🔍 Analyze Audio";
@@ -541,6 +626,9 @@
         fileInput.value = "";
       }
     });
+
+    // Check health on load
+    checkHealth();
   </script>
 </body>
 </html>

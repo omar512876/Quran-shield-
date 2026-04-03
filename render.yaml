@@ -1,23 +1,24 @@
 services:
   - type: web
     name: quran-shield
-    env: python
+    runtime: python
     region: oregon  # Change to your preferred region
     plan: free
-    buildCommand: "cd backend && pip install --upgrade pip && pip install -r requirements.txt"
-    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    buildCommand: |
+      cd backend && 
+      pip install --upgrade pip && 
+      pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: LOG_LEVEL
         value: INFO
       - key: MAX_FILE_SIZE_MB
-        value: 50
+        value: "50"
       - key: CORS_ORIGINS
         value: "*"
       - key: PYTHON_VERSION
         value: "3.11"
-    disk:
-      name: ffmpeg-cache
-      mountPath: /opt/render/project/src/backend/bin
-      sizeGB: 1
+    # Note: On Render free tier, FFmpeg will be auto-downloaded on first request
+    # For better performance, consider using a paid tier with persistent disk

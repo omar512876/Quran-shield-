@@ -1,22 +1,35 @@
 """Main FastAPI application"""
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from .config import settings
 from .routes import audio_router, health_router
 from .services.audio_analyzer import AudioAnalyzer
+from .utils.ffmpeg_config import get_ffmpeg_config, FFmpegConfig
 
 # Configure logging
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stdout
 )
 
 logger = logging.getLogger(__name__)
+
+# Global FFmpeg config for health checks
+_ffmpeg_config: FFmpegConfig = None
+
+
+def get_app_ffmpeg_config() -> FFmpegConfig:
+    """Get the global FFmpeg config instance."""
+    global _ffmpeg_config
+    return _ffmpeg_config
 
 
 @asynccontextmanager
@@ -26,8 +39,12 @@ async def lifespan(app: FastAPI):
     
     This replaces the deprecated @app.on_event decorators.
     """
+    global _ffmpeg_config
+    
     # Startup
+    logger.info("=" * 60)
     logger.info(f"{settings.APP_NAME} v{settings.VERSION} starting...")
+    logger.info("=" * 60)
     logger.info(f"Debug mode: {settings.DEBUG}")
     logger.info(f"CORS origins: {settings.CORS_ORIGINS}")
     
@@ -35,10 +52,46 @@ async def lifespan(app: FastAPI):
     if "*" in settings.CORS_ORIGINS:
         logger.warning("⚠️ WARNING: CORS is open to all origins. Set CORS_ORIGINS in .env for production.")
     
+    # CRITICAL: Initialize FFmpeg FIRST before anything else
+    logger.info("=" * 60)
+    logger.info("INITIALIZING FFMPEG...")
+    logger.info("=" * 60)
+    
+    try:
+        _ffmpeg_config = get_ffmpeg_config()
+        if _ffmpeg_config.is_available():
+            logger.info(f"✅ FFmpeg available at: {_ffmpeg_config.ffmpeg_path}")
+            logger.info(f"✅ FFprobe available at: {_ffmpeg_config.ffprobe_path}")
+            _ffmpeg_config.configure_pydub()
+            logger.info("✅ pydub configured with FFmpeg")
+        else:
+            logger.error("❌ FFmpeg NOT AVAILABLE!")
+            logger.error("   YouTube processing and some audio formats will NOT work.")
+            logger.error("   The application will start but with limited functionality.")
+    except Exception as e:
+        logger.error(f"❌ FFmpeg initialization failed: {e}")
+        logger.error("   YouTube processing and some audio formats will NOT work.")
+        _ffmpeg_config = None
+    
+    # Store FFmpeg config in app state for health checks
+    app.state.ffmpeg_config = _ffmpeg_config
+    
     # Initialize AudioAnalyzer singleton
-    logger.info("Initializing AudioAnalyzer...")
-    app.state.analyzer = AudioAnalyzer()
-    logger.info("✅ AudioAnalyzer initialized and cached")
+    logger.info("=" * 60)
+    logger.info("INITIALIZING AUDIO ANALYZER...")
+    logger.info("=" * 60)
+    
+    try:
+        app.state.analyzer = AudioAnalyzer()
+        logger.info("✅ AudioAnalyzer initialized and cached")
+    except Exception as e:
+        logger.error(f"❌ AudioAnalyzer initialization failed: {e}")
+        # Create a minimal analyzer anyway - it will fail gracefully on use
+        app.state.analyzer = None
+    
+    logger.info("=" * 60)
+    logger.info(f"✅ {settings.APP_NAME} READY")
+    logger.info("=" * 60)
     
     yield
     

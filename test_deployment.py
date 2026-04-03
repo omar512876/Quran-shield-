@@ -7,6 +7,7 @@ Tests health endpoint, API functionality, and FFmpeg integration after deploymen
 import requests
 import sys
 import time
+import io
 from pathlib import Path
 from typing import Dict, Any, Tuple
 

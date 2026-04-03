@@ -59,3 +59,30 @@ test_audio/
 *.h5
 *.pt
 *.pth
+
+# FFmpeg Binaries (auto-downloaded at runtime)
+bin/ffmpeg/ffmpeg
+bin/ffmpeg/ffmpeg.exe
+bin/ffmpeg/ffprobe
+bin/ffmpeg/ffprobe.exe
+backend/bin/ffmpeg/ffmpeg
+backend/bin/ffmpeg/ffmpeg.exe
+backend/bin/ffmpeg/ffprobe
+backend/bin/ffmpeg/ffprobe.exe
+*.tar.xz
+ffmpeg*.zip
+
+# Node modules (if using any frontend build tools)
+node_modules/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# pytest cache
+.pytest_cache/
+
+# mypy cache
+.mypy_cache/

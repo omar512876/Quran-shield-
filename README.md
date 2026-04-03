@@ -468,7 +468,18 @@ class AudioClassifier:
 
 ## 🛡️ What Was Fixed / Improved
 
-### Original Issues → Solutions:
+### Latest Fixes (v2.1.0):
+
+✅ **FFmpeg binaries removed from repository** → Auto-downloaded at runtime (saves ~400MB)
+✅ **FFmpeg initialization at startup** → Now properly logs FFmpeg status on app start
+✅ **Health endpoint enhanced** → Reports FFmpeg availability and analyzer status
+✅ **Frontend improved** → Better error handling, loading states, and timeout handling
+✅ **API responses standardized** → All errors return consistent JSON structure
+✅ **Dockerfile updated** → FFmpeg installed via apt-get for Linux containers
+✅ **Test scripts added** → Local and deployment testing scripts included
+✅ **Render config fixed** → Updated for correct deployment
+
+### Previous Improvements:
 
 ✅ **Manual FFmpeg installation** → Auto-bundled via imageio-ffmpeg
 ✅ **No error handling** → Comprehensive validation and meaningful errors  
@@ -481,7 +492,7 @@ class AudioClassifier:
 ✅ **No health endpoint** → `/health` and `/` endpoints  
 ✅ **Basic UI** → Enhanced with better UX and error display  
 ✅ **No type safety** → Pydantic models throughout  
-✅ **Hard to test** → Separated services for unit testing  
+✅ **Hard to test** → Separated services for unit testing
 
 ### New Enhancements:
 
