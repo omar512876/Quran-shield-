@@ -64,11 +64,25 @@ class FFmpegConfig:
             return
         
         from pydub import AudioSegment
+        
+        # Set pydub's converter paths
         AudioSegment.converter = self.ffmpeg_path
         AudioSegment.ffmpeg = self.ffmpeg_path
         
         if self.ffprobe_path:
             AudioSegment.ffprobe = self.ffprobe_path
+        
+        # Also set environment variables (pydub's subprocess uses these)
+        os.environ['FFMPEG_BINARY'] = self.ffmpeg_path
+        if self.ffprobe_path:
+            os.environ['FFPROBE_BINARY'] = self.ffprobe_path
+        
+        # Add ffmpeg directory to PATH so subprocess can find it
+        ffmpeg_dir = str(Path(self.ffmpeg_path).parent)
+        current_path = os.environ.get('PATH', '')
+        if ffmpeg_dir not in current_path:
+            os.environ['PATH'] = ffmpeg_dir + os.pathsep + current_path
+            logger.info(f"✅ Added {ffmpeg_dir} to PATH")
         
         logger.info("✅ pydub configured to use detected ffmpeg")
     
