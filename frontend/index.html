@@ -3,14 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Quran Shield - Detect music vs. Quran recitation in audio files" />
   <title>Quran Shield – Audio Analyzer</title>
 
-  <!-- =====================================================================
-       STYLES
-       A simple, centered layout that is easy to read on any screen size.
-       ===================================================================== -->
   <style>
-    /* Reset and base font */
+    /* === RESET & BASE === */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -18,209 +15,281 @@
     }
 
     body {
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f0f4f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #2d3748;
       min-height: 100vh;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: center;
-      padding: 2rem 1rem;
+      padding: 1.5rem;
     }
 
-    /* Main card container */
-    .card {
+    /* === MAIN CONTAINER === */
+    .container {
       background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       width: 100%;
-      max-width: 600px;
-      padding: 2rem;
+      max-width: 650px;
+      padding: 2.5rem;
+      animation: slideIn 0.5s ease-out;
     }
 
-    /* Page title */
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* === HEADER === */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
     h1 {
-      font-size: 1.6rem;
-      margin-bottom: 0.25rem;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
       color: #1a202c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
 
     .subtitle {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: #718096;
-      margin-bottom: 1.75rem;
     }
 
-    /* Divider between the two input sections */
+    /* === FORM SECTIONS === */
+    .input-section {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #4a5568;
+    }
+
+    input[type="file"] {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px dashed #cbd5e0;
+      border-radius: 8px;
+      background: #f7fafc;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    input[type="file"]:hover {
+      border-color: #4299e1;
+      background: #ebf8ff;
+    }
+
+    input[type="file"]:focus {
+      outline: none;
+      border-color: #3182ce;
+      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    }
+
+    input[type="url"] {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    input[type="url"]:focus {
+      outline: none;
+      border-color: #3182ce;
+      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+    }
+
+    /* === DIVIDER === */
     .divider {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin: 1.25rem 0;
+      gap: 1rem;
+      margin: 1.5rem 0;
       color: #a0aec0;
-      font-size: 0.85rem;
+      font-size: 0.875rem;
+      font-weight: 600;
     }
 
     .divider::before,
     .divider::after {
       content: "";
       flex: 1;
-      height: 1px;
-      background: #e2e8f0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
     }
 
-    /* Form section labels */
-    label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 600;
-      margin-bottom: 0.4rem;
-      color: #4a5568;
-    }
-
-    /* File input */
-    input[type="file"] {
+    /* === BUTTON === */
+    .btn {
       display: block;
       width: 100%;
-      padding: 0.6rem 0.75rem;
-      border: 1px solid #cbd5e0;
-      border-radius: 8px;
-      background: #f7fafc;
-      font-size: 0.875rem;
-      cursor: pointer;
-    }
-
-    input[type="file"]:focus {
-      outline: 2px solid #4299e1;
-      outline-offset: 2px;
-    }
-
-    /* Text input (URL) */
-    input[type="url"] {
-      display: block;
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      border: 1px solid #cbd5e0;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      transition: border-color 0.2s;
-    }
-
-    input[type="url"]:focus {
-      outline: none;
-      border-color: #4299e1;
-      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
-    }
-
-    /* Analyze button */
-    button#analyzeBtn {
-      display: block;
-      width: 100%;
-      margin-top: 1.5rem;
-      padding: 0.75rem;
-      background: #3182ce;
+      padding: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #ffffff;
       border: none;
       border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 1.05rem;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
-    button#analyzeBtn:hover:not(:disabled) {
-      background: #2b6cb0;
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
     }
 
-    button#analyzeBtn:active:not(:disabled) {
-      transform: scale(0.98);
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
     }
 
-    button#analyzeBtn:disabled {
-      background: #90cdf4;
+    .btn:disabled {
+      background: #cbd5e0;
       cursor: not-allowed;
+      box-shadow: none;
     }
 
-    /* Result area */
+    /* === LOADING SPINNER === */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* === RESULT AREA === */
     #result {
-      margin-top: 1.75rem;
+      margin-top: 2rem;
     }
 
-    /* Error message box */
+    /* === ERROR BOX === */
     .error-box {
       background: #fff5f5;
-      border: 1px solid #feb2b2;
+      border-left: 4px solid #fc8181;
       color: #c53030;
       border-radius: 8px;
-      padding: 0.85rem 1rem;
+      padding: 1rem;
       font-size: 0.9rem;
+      animation: shake 0.5s;
     }
 
-    /* Formatted result card */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* === SUCCESS BOX === */
     .result-card {
-      background: #f0fff4;
-      border: 1px solid #9ae6b4;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
+      background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+      border: 2px solid #9ae6b4;
+      border-radius: 12px;
+      padding: 1.5rem;
+      animation: fadeIn 0.5s;
     }
 
-    /* Prediction badge (big label at the top of results) */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     .prediction-badge {
       display: inline-block;
-      padding: 0.3rem 0.85rem;
+      padding: 0.5rem 1.2rem;
       border-radius: 999px;
-      font-size: 1rem;
-      font-weight: 700;
-      margin-bottom: 0.85rem;
-      text-transform: capitalize;
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .badge-music {
-      background: #ebf8ff;
-      color: #2b6cb0;
+      background: linear-gradient(135deg, #fbb6ce 0%, #ed64a6 100%);
+      color: #742a2a;
     }
 
     .badge-speech {
-      background: #faf5ff;
-      color: #6b46c1;
+      background: linear-gradient(135deg, #9ae6b4 0%, #48bb78 100%);
+      color: #22543d;
     }
 
-    .badge-url {
-      background: #fffff0;
-      color: #744210;
-    }
-
-    /* Detail rows */
+    /* === DETAILS TABLE === */
     .details-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.875rem;
-      margin-bottom: 1rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
     }
 
     .details-table td {
-      padding: 0.35rem 0.5rem;
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .details-table tr:last-child td {
+      border-bottom: none;
     }
 
     .details-table td:first-child {
       font-weight: 600;
       color: #4a5568;
-      width: 50%;
+      width: 45%;
     }
 
-    /* Raw JSON toggle section */
+    .details-table td:last-child {
+      color: #2d3748;
+      font-weight: 500;
+    }
+
+    /* === COLLAPSIBLE JSON === */
     details {
-      margin-top: 0.75rem;
+      margin-top: 1rem;
+      cursor: pointer;
     }
 
     summary {
-      cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: #718096;
+      font-weight: 600;
       user-select: none;
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: background 0.2s;
     }
 
     summary:hover {
+      background: rgba(0, 0, 0, 0.05);
       color: #4a5568;
     }
 
@@ -234,296 +303,233 @@
       margin-top: 0.5rem;
       white-space: pre-wrap;
       word-break: break-word;
+      line-height: 1.5;
     }
 
-    /* Loading spinner shown while the request is in-flight */
-    .spinner {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 3px solid rgba(255, 255, 255, 0.4);
-      border-top-color: #ffffff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 0.5rem;
-    }
+    /* === RESPONSIVE === */
+    @media (max-width: 640px) {
+      .container {
+        padding: 1.5rem;
+      }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .subtitle {
+        font-size: 0.85rem;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- =====================================================================
-       HTML STRUCTURE
-       ===================================================================== -->
-  <div class="card">
-    <h1>🛡️ Quran Shield</h1>
-    <p class="subtitle">Audio Analysis – detect music vs. speech in a file or YouTube URL</p>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <h1>🛡️ Quran Shield</h1>
+      <p class="subtitle">AI-powered audio analysis to detect music vs. Quran recitation</p>
+    </div>
 
-    <!-- ── File upload section ── -->
-    <label for="audioFile">Upload an audio file</label>
-    <input
-      type="file"
-      id="audioFile"
-      accept="audio/*,video/*"
-      aria-label="Upload audio file"
-    />
+    <!-- FILE UPLOAD -->
+    <div class="input-section">
+      <label for="audioFile">📁 Upload Audio File</label>
+      <input
+        type="file"
+        id="audioFile"
+        accept="audio/*,video/*"
+        aria-label="Upload audio file"
+      />
+    </div>
 
+    <!-- DIVIDER -->
     <div class="divider">OR</div>
 
-    <!-- ── URL section ── -->
-    <label for="youtubeUrl">YouTube / audio URL</label>
-    <input
-      type="url"
-      id="youtubeUrl"
-      placeholder="https://www.youtube.com/watch?v=..."
-      aria-label="YouTube or audio URL"
-    />
+    <!-- URL INPUT -->
+    <div class="input-section">
+      <label for="youtubeUrl">🔗 YouTube / Audio URL</label>
+      <input
+        type="url"
+        id="youtubeUrl"
+        placeholder="https://www.youtube.com/watch?v=..."
+        aria-label="YouTube or audio URL"
+      />
+    </div>
 
-    <!-- ── Submit button ── -->
-    <button id="analyzeBtn" type="button">Analyze</button>
+    <!-- ANALYZE BUTTON -->
+    <button id="analyzeBtn" class="btn" type="button">
+      🔍 Analyze Audio
+    </button>
 
-    <!-- ── Result display area ── -->
+    <!-- RESULT AREA -->
     <div id="result" role="region" aria-live="polite"></div>
   </div>
 
-  <!-- =====================================================================
-       JAVASCRIPT
-       Plain vanilla JS — no frameworks required.
-       ===================================================================== -->
+  <!-- ============================================ -->
+  <!-- JAVASCRIPT -->
+  <!-- ============================================ -->
   <script>
-    // -----------------------------------------------------------------
-    // Configuration
-    // -----------------------------------------------------------------
-    // Use a relative URL so the frontend works regardless of which host
-    // or port the FastAPI server is running on.
-    const API_URL = "/analyze";
+    const API_URL = "/api/analyze";
+    const fileInput = document.getElementById("audioFile");
+    const urlInput = document.getElementById("youtubeUrl");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const resultArea = document.getElementById("result");
 
-    // -----------------------------------------------------------------
-    // DOM references
-    // -----------------------------------------------------------------
-    const fileInput   = document.getElementById("audioFile");
-    const urlInput    = document.getElementById("youtubeUrl");
-    const analyzeBtn  = document.getElementById("analyzeBtn");
-    const resultArea  = document.getElementById("result");
+    // Helper: Escape HTML to prevent XSS
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
 
-    // -----------------------------------------------------------------
-    // Helper: show an error message inside the result area
-    // -----------------------------------------------------------------
+    // Helper: Show error message
     function showError(message) {
       resultArea.innerHTML = `
         <div class="error-box">
-          ⚠️ ${escapeHtml(message)}
+          ⚠️ <strong>Error:</strong> ${escapeHtml(message)}
         </div>
       `;
     }
 
-    // -----------------------------------------------------------------
-    // Helper: escape HTML special characters to prevent XSS when
-    // inserting user/server data into innerHTML
-    // -----------------------------------------------------------------
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    // -----------------------------------------------------------------
-    // Helper: render a nicely formatted result card from the API response
-    // -----------------------------------------------------------------
+    // Helper: Render success result
     function showResult(data) {
-      // Determine the prediction badge style
-      let badgeClass = "badge-url";
-      if (data.prediction === "music")         badgeClass = "badge-music";
-      if (data.prediction === "quran/speech")  badgeClass = "badge-speech";
+      const badgeClass = data.prediction === "music" ? "badge-music" : "badge-speech";
+      const predictionEmoji = data.prediction === "music" ? "🎵" : "📿";
+      const predictionText = data.prediction === "music" ? "Music Detected" : "Safe (Quran/Speech)";
 
-      // Build rows for numeric details when present.
-      // The API returns features under the "features" key.
       let detailRows = "";
-      if (data.features) {
-        const { spectral_centroid, zcr, tempo, chroma_std, onset_std } = data.features;
-
-        if (spectral_centroid !== undefined) {
-          detailRows += `
-            <tr>
-              <td>Spectral Centroid</td>
-              <td>${spectral_centroid.toFixed(2)} Hz</td>
-            </tr>`;
-        }
-        if (zcr !== undefined) {
-          detailRows += `
-            <tr>
-              <td>Zero-Crossing Rate</td>
-              <td>${zcr.toFixed(6)}</td>
-            </tr>`;
-        }
-        if (tempo !== undefined) {
-          detailRows += `
-            <tr>
-              <td>Tempo</td>
-              <td>${tempo.toFixed(1)} BPM</td>
-            </tr>`;
-        }
-        if (chroma_std !== undefined) {
-          detailRows += `
-            <tr>
-              <td>Chroma Std</td>
-              <td>${chroma_std.toFixed(4)}</td>
-            </tr>`;
-        }
-        if (onset_std !== undefined) {
-          detailRows += `
-            <tr>
-              <td>Onset Strength Std</td>
-              <td>${onset_std.toFixed(4)}</td>
-            </tr>`;
-        }
-      }
-
-      // Confidence row
-      let confidenceRow = "";
+      
+      // Confidence
       if (data.confidence !== undefined) {
         const pct = (data.confidence * 100).toFixed(1);
-        confidenceRow = `
+        detailRows += `
           <tr>
-            <td>Confidence</td>
-            <td>${pct}%</td>
+            <td>🎯 Confidence</td>
+            <td><strong>${pct}%</strong></td>
           </tr>`;
       }
 
-      // Show the source URL if this was a URL-based request
-      let urlRow = "";
-      if (data.url) {
-        urlRow = `
+      // Key features
+      if (data.features) {
+        const { spectral_centroid, tempo, chroma_std } = data.features;
+        if (spectral_centroid) {
+          detailRows += `
+            <tr>
+              <td>🎼 Spectral Centroid</td>
+              <td>${spectral_centroid.toFixed(1)} Hz</td>
+            </tr>`;
+        }
+        if (tempo) {
+          detailRows += `
+            <tr>
+              <td>⏱️ Tempo</td>
+              <td>${tempo.toFixed(1)} BPM</td>
+            </tr>`;
+        }
+        if (chroma_std) {
+          detailRows += `
+            <tr>
+              <td>🎹 Harmonic Variation</td>
+              <td>${chroma_std.toFixed(4)}</td>
+            </tr>`;
+        }
+      }
+
+      // Source info
+      if (data.filename) {
+        detailRows += `
           <tr>
-            <td>URL</td>
+            <td>📄 File</td>
+            <td style="word-break:break-all;">${escapeHtml(data.filename)}</td>
+          </tr>`;
+      }
+      if (data.url) {
+        detailRows += `
+          <tr>
+            <td>🔗 URL</td>
             <td style="word-break:break-all;">${escapeHtml(data.url)}</td>
           </tr>`;
       }
 
-      // Prediction label (fall back to "url response" when no prediction key)
-      const predictionLabel = data.prediction
-        ? data.prediction
-        : (data.source === "url" ? "URL submitted" : "Unknown");
-
-      // Raw JSON (pretty-printed) for the collapsible section
       const rawJson = JSON.stringify(data, null, 2);
 
       resultArea.innerHTML = `
         <div class="result-card">
-          <span class="prediction-badge ${badgeClass}">${escapeHtml(predictionLabel)}</span>
+          <div>
+            <span class="prediction-badge ${badgeClass}">
+              ${predictionEmoji} ${predictionText}
+            </span>
+          </div>
 
-          ${confidenceRow || detailRows || urlRow ? `
           <table class="details-table">
-            <tbody>
-              ${confidenceRow}
-              ${detailRows}
-              ${urlRow}
-            </tbody>
-          </table>` : ""}
+            <tbody>${detailRows}</tbody>
+          </table>
 
-          <!-- Collapsible raw JSON section -->
           <details>
-            <summary>Show raw JSON response</summary>
+            <summary>📊 Show Full JSON Response</summary>
             <pre>${escapeHtml(rawJson)}</pre>
           </details>
         </div>
       `;
     }
 
-    // -----------------------------------------------------------------
-    // Main click handler
-    // -----------------------------------------------------------------
+    // Main: Analyze button click handler
     analyzeBtn.addEventListener("click", async () => {
-      // Clear any previous result
       resultArea.innerHTML = "";
 
-      const file = fileInput.files[0];       // File object or undefined
-      const url  = urlInput.value.trim();    // String or ""
+      const file = fileInput.files[0];
+      const url = urlInput.value.trim();
 
-      // Validate: at least one input must be provided
       if (!file && !url) {
-        showError("Please upload an audio file or enter a URL before clicking Analyze.");
+        showError("Please upload a file or enter a URL before clicking Analyze.");
         return;
       }
 
-      // Show loading state on the button
+      // Show loading state
       analyzeBtn.disabled = true;
-      analyzeBtn.innerHTML = '<span class="spinner"></span>Analyzing…';
+      analyzeBtn.innerHTML = '<span class="spinner"></span>Analyzing...';
 
       try {
-        let response;
-
+        const formData = new FormData();
         if (file) {
-          // ── Case 1: file uploaded ──
-          // Send as multipart/form-data so the backend can receive the
-          // UploadFile parameter.  The browser sets the correct
-          // Content-Type boundary automatically when using FormData.
-          const formData = new FormData();
           formData.append("file", file);
-
-          response = await fetch(API_URL, {
-            method: "POST",
-            body: formData,
-            // Do NOT set Content-Type manually — let the browser do it
-          });
         } else {
-          // ── Case 2: URL provided ──
-          // The backend expects url as a form field (Form(...)), so we
-          // still send multipart/form-data (not JSON).
-          const formData = new FormData();
           formData.append("url", url);
-
-          response = await fetch(API_URL, {
-            method: "POST",
-            body: formData,
-          });
         }
 
-        // Parse the JSON body regardless of HTTP status code
+        const response = await fetch(API_URL, {
+          method: "POST",
+          body: formData,
+        });
+
         let data;
         try {
           data = await response.json();
         } catch {
-          // Server returned a non-JSON body (e.g. 500 HTML error page)
           showError(`Server returned an unexpected response (HTTP ${response.status}).`);
           return;
         }
 
         if (!response.ok) {
-          // The server responded with a 4xx / 5xx status and an error field
-          const msg = data.error || data.detail || `HTTP error ${response.status}`;
+          const msg = data.detail || data.error || `HTTP error ${response.status}`;
           showError(msg);
           return;
         }
 
-        // Success — render the formatted result
         showResult(data);
 
       } catch (err) {
-        // fetch() itself threw, meaning the server is unreachable,
-        // there is a network issue, or a CORS error occurred.
+        console.error("Fetch error:", err);
         showError(
-          "Could not reach the backend. Make sure the server is running at " +
-          API_URL + " and that CORS is enabled."
+          "Could not reach the backend. Make sure the server is running and accessible."
         );
       } finally {
-        // Always re-enable the button
         analyzeBtn.disabled = false;
-        analyzeBtn.textContent = "Analyze";
+        analyzeBtn.innerHTML = "🔍 Analyze Audio";
       }
     });
 
-    // -----------------------------------------------------------------
-    // UX: clear the URL field when a file is chosen (and vice-versa)
-    // so the user doesn't accidentally submit both
-    // -----------------------------------------------------------------
+    // UX: Clear URL when file is selected (and vice-versa)
     fileInput.addEventListener("change", () => {
       if (fileInput.files.length > 0) {
         urlInput.value = "";
