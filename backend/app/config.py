@@ -17,6 +17,11 @@ class Settings:
         "*"  # In production, set this to your domain
     ).split(",")
     
+    ALLOWED_ORIGINS: List[str] = os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:5173,http://localhost:3000"
+    ).split(",")
+    
     # Server Settings
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8000"))

@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Quran Shield - Detect music vs. Quran recitation in audio files" />
-  <title>Quran Shield – Audio Analyzer</title>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Quran Shield - Audio integrity analysis for Quran recitations">
+  <title>Quran Shield</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    /* === RESET & BASE === */
+    :root {
+      --bg: #0e0e0e;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --text: #e8e6e0;
+      --muted: #6b6962;
+      --accent: #c9a96e;
+      --safe: #4a7c59;
+      --danger: #8b3a3a;
+      --radius: 12px;
+      --font: 'Inter', system-ui, sans-serif;
+    }
+
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -15,619 +29,805 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #2d3748;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
+      line-height: 1.7;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* === MAIN CONTAINER === */
-    .container {
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      width: 100%;
-      max-width: 650px;
-      padding: 2.5rem;
-      animation: slideIn 0.5s ease-out;
+    .page {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
     }
 
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* === HEADER === */
+    /* Header */
     .header {
-      text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 32px;
     }
 
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      color: #1a202c;
+    .header-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: var(--text);
     }
 
     .subtitle {
-      font-size: 0.95rem;
-      color: #718096;
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
-    /* === FORM SECTIONS === */
-    .input-section {
-      margin-bottom: 1.5rem;
+    .health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-left: auto;
+      flex-shrink: 0;
     }
 
-    label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: #4a5568;
+    .health-dot.online { background: var(--safe); }
+    .health-dot.offline { background: var(--danger); }
+
+    /* Input Card */
+    .input-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 32px;
     }
 
-    input[type="file"] {
-      display: block;
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px dashed #cbd5e0;
-      border-radius: 8px;
-      background: #f7fafc;
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    input[type="file"]:hover {
-      border-color: #4299e1;
-      background: #ebf8ff;
-    }
-
-    input[type="file"]:focus {
-      outline: none;
-      border-color: #3182ce;
-      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
-    }
-
-    input[type="url"] {
-      display: block;
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      transition: all 0.2s;
-    }
-
-    input[type="url"]:focus {
-      outline: none;
-      border-color: #3182ce;
-      box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
-    }
-
-    /* === DIVIDER === */
-    .divider {
+    /* Tabs */
+    .tabs {
       display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin: 1.5rem 0;
-      color: #a0aec0;
-      font-size: 0.875rem;
-      font-weight: 600;
+      gap: 24px;
+      margin-bottom: 20px;
     }
 
-    .divider::before,
-    .divider::after {
-      content: "";
-      flex: 1;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+    .tab {
+      background: none;
+      border: none;
+      padding: 8px 0;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
     }
 
-    /* === BUTTON === */
-    .btn {
+    .tab:hover {
+      color: var(--text);
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
       display: block;
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--accent);
+    }
+
+    .drop-zone-text {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .drop-zone-hint {
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 12px;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-name {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: var(--accent);
+    }
+
+    /* URL Input */
+    .url-input {
       width: 100%;
-      padding: 1rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #ffffff;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+
+    .url-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .url-input::placeholder {
+      color: var(--muted);
+    }
+
+    /* Analyze Button */
+    .analyze-btn {
+      width: 100%;
+      height: 48px;
+      margin-top: 20px;
+      background: var(--accent);
       border: none;
       border-radius: 8px;
-      font-size: 1.05rem;
-      font-weight: 700;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #0e0e0e;
       cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      transition: opacity 0.2s;
     }
 
-    .btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    .analyze-btn:hover:not(:disabled) {
+      opacity: 0.88;
     }
 
-    .btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    .btn:disabled {
-      background: #cbd5e0;
+    .analyze-btn:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
-      box-shadow: none;
     }
 
-    /* === LOADING SPINNER === */
-    .spinner {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top-color: #ffffff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      vertical-align: middle;
-      margin-right: 0.5rem;
+    /* Status Area */
+    .status-area {
+      display: none;
+      margin-bottom: 32px;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .status-area.visible {
+      display: block;
     }
 
-    /* === RESULT AREA === */
-    #result {
-      margin-top: 2rem;
+    .progress-bar {
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      overflow: hidden;
+      margin-bottom: 12px;
     }
 
-    /* === ERROR BOX === */
-    .error-box {
-      background: #fff5f5;
-      border-left: 4px solid #fc8181;
-      color: #c53030;
-      border-radius: 8px;
-      padding: 1rem;
-      font-size: 0.9rem;
-      animation: shake 0.5s;
+    .progress-fill {
+      height: 100%;
+      width: 30%;
+      background: var(--accent);
+      animation: slide 1.5s ease-in-out infinite;
     }
 
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
+    @keyframes slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(400%); }
     }
 
-    /* === SUCCESS BOX === */
+    .status-text {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    /* Result Card */
     .result-card {
-      background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
-      border: 2px solid #9ae6b4;
-      border-radius: 12px;
-      padding: 1.5rem;
-      animation: fadeIn 0.5s;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      border-left: 3px solid var(--safe);
+      opacity: 0;
+      animation: fadeIn 0.2s ease forwards;
+      display: none;
+    }
+
+    .result-card.visible {
+      display: block;
+    }
+
+    .result-card.suspicious {
+      border-left-color: var(--danger);
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; }
       to { opacity: 1; }
     }
 
-    .prediction-badge {
-      display: inline-block;
-      padding: 0.5rem 1.2rem;
-      border-radius: 999px;
-      font-size: 1.1rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
+    .result-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .verdict-badge {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
-    .badge-music {
-      background: linear-gradient(135deg, #fbb6ce 0%, #ed64a6 100%);
-      color: #742a2a;
+    .verdict-badge.safe { color: var(--safe); }
+    .verdict-badge.suspicious { color: var(--danger); }
+
+    .confidence {
+      font-size: 0.875rem;
+      color: var(--muted);
     }
 
-    .badge-speech {
-      background: linear-gradient(135deg, #9ae6b4 0%, #48bb78 100%);
-      color: #22543d;
+    .summary {
+      font-size: 0.9375rem;
+      color: var(--text);
+      margin-top: 12px;
     }
 
-    /* === DETAILS TABLE === */
-    .details-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      font-size: 0.9rem;
+    .duration {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      margin-top: 4px;
     }
 
-    .details-table td {
-      padding: 0.6rem 0.5rem;
-      border-bottom: 1px solid #e2e8f0;
+    /* Segments */
+    .segments-section {
+      margin-top: 20px;
     }
 
-    .details-table tr:last-child td {
+    .segments-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .segment-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .segment-row:last-child {
       border-bottom: none;
     }
 
-    .details-table td:first-child {
-      font-weight: 600;
-      color: #4a5568;
-      width: 45%;
+    .segment-time {
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: var(--text);
     }
 
-    .details-table td:last-child {
-      color: #2d3748;
+    .segment-label {
+      background: rgba(139, 58, 58, 0.15);
+      color: var(--danger);
+      font-size: 0.6875rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    .segment-score {
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    /* Technical Details */
+    .details-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 20px;
+      padding: 8px 0;
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 0.8125rem;
+      color: var(--muted);
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+    }
+
+    .details-toggle:hover {
+      color: var(--text);
+    }
+
+    .details-arrow {
+      transition: transform 0.2s;
+      font-size: 0.75rem;
+    }
+
+    .details-toggle.expanded .details-arrow {
+      transform: rotate(90deg);
+    }
+
+    .details-content {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .details-content.visible {
+      display: block;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 0.8125rem;
+    }
+
+    .detail-key {
+      color: var(--muted);
+    }
+
+    .detail-value {
+      color: var(--text);
+      font-family: monospace;
+    }
+
+    /* Error Area */
+    .error-area {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      margin-bottom: 32px;
+    }
+
+    .error-area.visible {
+      display: flex;
+    }
+
+    .error-x {
+      color: var(--danger);
       font-weight: 500;
     }
 
-    /* === COLLAPSIBLE JSON === */
-    details {
-      margin-top: 1rem;
-      cursor: pointer;
+    .error-message {
+      color: var(--text);
     }
 
-    summary {
-      font-size: 0.85rem;
-      color: #718096;
-      font-weight: 600;
-      user-select: none;
-      padding: 0.5rem;
-      border-radius: 6px;
-      transition: background 0.2s;
-    }
-
-    summary:hover {
-      background: rgba(0, 0, 0, 0.05);
-      color: #4a5568;
-    }
-
-    pre {
-      background: #2d3748;
-      color: #e2e8f0;
-      border-radius: 8px;
-      padding: 1rem;
-      font-size: 0.8rem;
-      overflow-x: auto;
-      margin-top: 0.5rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-      line-height: 1.5;
-    }
-
-    /* === RESPONSIVE === */
-    @media (max-width: 640px) {
-      .container {
-        padding: 1.5rem;
+    @media (max-width: 480px) {
+      .page {
+        padding: 24px 16px;
       }
 
-      h1 {
+      .header h1 {
         font-size: 1.5rem;
       }
 
-      .subtitle {
-        font-size: 0.85rem;
+      .input-card {
+        padding: 20px;
+      }
+
+      .segment-row {
+        flex-wrap: wrap;
+        gap: 8px;
       }
     }
   </style>
 </head>
 <body>
+  <div class="page">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-row">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 4 A10 10 0 1 0 14 24 A7 7 0 1 1 14 4Z" fill="#c9a96e"/>
+          <polygon points="21,6 21.9,8.6 24.6,8.6 22.5,10.2 23.3,12.9 21,11.3 18.7,12.9 19.5,10.2 17.4,8.6 20.1,8.6" fill="#c9a96e"/>
+        </svg>
+        <h1>Quran Shield</h1>
+        <div class="health-dot" id="healthDot" title="Backend status"></div>
+      </div>
+      <p class="subtitle">Audio integrity analysis for Quran recitations</p>
+    </header>
 
-  <div class="container">
-    <!-- HEADER -->
-    <div class="header">
-      <h1>🛡️ Quran Shield</h1>
-      <p class="subtitle">AI-powered audio analysis to detect music vs. Quran recitation</p>
+    <!-- Input Card -->
+    <div class="input-card">
+      <div class="tabs">
+        <button class="tab active" data-tab="upload">Upload Audio</button>
+        <button class="tab" data-tab="url">YouTube URL</button>
+      </div>
+
+      <div class="tab-content active" id="upload-tab">
+        <div class="drop-zone" id="dropZone">
+          <p class="drop-zone-text">Drop audio file here or click to browse</p>
+          <p class="drop-zone-hint">MP3, WAV, OGG, M4A, FLAC — max 50 MB</p>
+          <p class="file-name" id="fileName"></p>
+        </div>
+        <input type="file" class="file-input" id="fileInput" accept="audio/*,video/*">
+      </div>
+
+      <div class="tab-content" id="url-tab">
+        <input type="url" class="url-input" id="urlInput" placeholder="https://www.youtube.com/watch?v=...">
+      </div>
+
+      <button class="analyze-btn" id="analyzeBtn">Analyze Audio</button>
     </div>
 
-    <!-- FILE UPLOAD -->
-    <div class="input-section">
-      <label for="audioFile">📁 Upload Audio File</label>
-      <input
-        type="file"
-        id="audioFile"
-        accept="audio/*,video/*"
-        aria-label="Upload audio file"
-      />
+    <!-- Status Area -->
+    <div class="status-area" id="statusArea">
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+      <p class="status-text" id="statusText">Uploading…</p>
     </div>
 
-    <!-- DIVIDER -->
-    <div class="divider">OR</div>
-
-    <!-- URL INPUT -->
-    <div class="input-section">
-      <label for="youtubeUrl">🔗 YouTube / Audio URL</label>
-      <input
-        type="url"
-        id="youtubeUrl"
-        placeholder="https://www.youtube.com/watch?v=..."
-        aria-label="YouTube or audio URL"
-      />
+    <!-- Error Area -->
+    <div class="error-area" id="errorArea">
+      <span class="error-x">×</span>
+      <span class="error-message" id="errorMessage"></span>
     </div>
 
-    <!-- ANALYZE BUTTON -->
-    <button id="analyzeBtn" class="btn" type="button">
-      🔍 Analyze Audio
-    </button>
+    <!-- Result Card -->
+    <div class="result-card" id="resultCard">
+      <div class="result-top">
+        <span class="verdict-badge" id="verdictBadge">SAFE</span>
+        <span class="confidence" id="confidenceText"></span>
+      </div>
+      <p class="summary" id="summaryText"></p>
+      <p class="duration" id="durationText"></p>
 
-    <!-- RESULT AREA -->
-    <div id="result" role="region" aria-live="polite"></div>
+      <div class="segments-section" id="segmentsSection" style="display: none;">
+        <p class="segments-label">Suspicious segments</p>
+        <div id="segmentsList"></div>
+      </div>
+
+      <button class="details-toggle" id="detailsToggle">
+        <span class="details-arrow">›</span>
+        Technical details
+      </button>
+      <div class="details-content" id="detailsContent">
+        <div class="detail-row">
+          <span class="detail-key">Spectral Centroid Mean</span>
+          <span class="detail-value" id="featureCentroid">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">ZCR Mean</span>
+          <span class="detail-value" id="featureZcr">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">RMS Mean</span>
+          <span class="detail-value" id="featureRms">—</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- ============================================ -->
-  <!-- JAVASCRIPT -->
-  <!-- ============================================ -->
   <script>
     // API Configuration
-    // When served from the same origin, use relative URL
-    // For different origins, set BACKEND_URL before loading this script
     const API_BASE = window.BACKEND_URL || '';
     const API_URL = `${API_BASE}/api/analyze`;
+    const RESULT_URL = `${API_BASE}/api/result`;
     const HEALTH_URL = `${API_BASE}/health`;
-    
-    const fileInput = document.getElementById("audioFile");
-    const urlInput = document.getElementById("youtubeUrl");
-    const analyzeBtn = document.getElementById("analyzeBtn");
-    const resultArea = document.getElementById("result");
 
-    // Check backend health on page load
+    // DOM Elements
+    const healthDot = document.getElementById('healthDot');
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = {
+      upload: document.getElementById('upload-tab'),
+      url: document.getElementById('url-tab')
+    };
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    const urlInput = document.getElementById('urlInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const statusArea = document.getElementById('statusArea');
+    const statusText = document.getElementById('statusText');
+    const errorArea = document.getElementById('errorArea');
+    const errorMessage = document.getElementById('errorMessage');
+    const resultCard = document.getElementById('resultCard');
+    const verdictBadge = document.getElementById('verdictBadge');
+    const confidenceText = document.getElementById('confidenceText');
+    const summaryText = document.getElementById('summaryText');
+    const durationText = document.getElementById('durationText');
+    const segmentsSection = document.getElementById('segmentsSection');
+    const segmentsList = document.getElementById('segmentsList');
+    const detailsToggle = document.getElementById('detailsToggle');
+    const detailsContent = document.getElementById('detailsContent');
+    const featureCentroid = document.getElementById('featureCentroid');
+    const featureZcr = document.getElementById('featureZcr');
+    const featureRms = document.getElementById('featureRms');
+
+    let selectedFile = null;
+    let currentTab = 'upload';
+
+    // Health Check
     async function checkHealth() {
       try {
-        const response = await fetch(HEALTH_URL, { timeout: 5000 });
+        const response = await fetch(HEALTH_URL);
         if (response.ok) {
+          healthDot.classList.add('online');
+          healthDot.classList.remove('offline');
+        } else {
+          healthDot.classList.add('offline');
+          healthDot.classList.remove('online');
+        }
+      } catch {
+        healthDot.classList.add('offline');
+        healthDot.classList.remove('online');
+      }
+    }
+
+    // Tab Switching
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        Object.keys(tabContents).forEach(key => {
+          tabContents[key].classList.toggle('active', key === targetTab);
+        });
+        currentTab = targetTab;
+      });
+    });
+
+    // Drop Zone
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        selectedFile = files[0];
+        fileName.textContent = selectedFile.name;
+        urlInput.value = '';
+      }
+    });
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        selectedFile = fileInput.files[0];
+        fileName.textContent = selectedFile.name;
+        urlInput.value = '';
+      }
+    });
+
+    // URL Input
+    urlInput.addEventListener('input', () => {
+      if (urlInput.value.trim()) {
+        selectedFile = null;
+        fileInput.value = '';
+        fileName.textContent = '';
+      }
+    });
+
+    urlInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        analyzeAudio();
+      }
+    });
+
+    // Details Toggle
+    detailsToggle.addEventListener('click', () => {
+      detailsToggle.classList.toggle('expanded');
+      detailsContent.classList.toggle('visible');
+    });
+
+    // Format duration
+    function formatDuration(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Show/Hide helpers
+    function showStatus(text) {
+      statusText.textContent = text;
+      statusArea.classList.add('visible');
+      errorArea.classList.remove('visible');
+      resultCard.classList.remove('visible');
+    }
+
+    function hideStatus() {
+      statusArea.classList.remove('visible');
+    }
+
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorArea.classList.add('visible');
+      hideStatus();
+      resultCard.classList.remove('visible');
+    }
+
+    function showResult(data) {
+      hideStatus();
+      errorArea.classList.remove('visible');
+
+      const isSuspicious = data.verdict === 'suspicious';
+      resultCard.classList.toggle('suspicious', isSuspicious);
+      
+      verdictBadge.textContent = isSuspicious ? 'SUSPICIOUS' : 'SAFE';
+      verdictBadge.className = 'verdict-badge ' + (isSuspicious ? 'suspicious' : 'safe');
+
+      const conf = data.confidence !== undefined ? (data.confidence * 100).toFixed(1) + '%' : '';
+      confidenceText.textContent = conf;
+
+      summaryText.textContent = data.summary || '';
+      durationText.textContent = data.duration !== undefined ? 'Duration: ' + formatDuration(data.duration) : '';
+
+      // Segments
+      if (isSuspicious && data.segments && data.segments.length > 0) {
+        segmentsSection.style.display = 'block';
+        segmentsList.innerHTML = '';
+        data.segments.forEach(seg => {
+          const row = document.createElement('div');
+          row.className = 'segment-row';
+
+          const time = document.createElement('span');
+          time.className = 'segment-time';
+          time.textContent = (seg.start_formatted || formatDuration(seg.start)) + ' → ' + (seg.end_formatted || formatDuration(seg.end));
+
+          const label = document.createElement('span');
+          label.className = 'segment-label';
+          label.textContent = seg.label || 'unknown';
+
+          const score = document.createElement('span');
+          score.className = 'segment-score';
+          score.textContent = seg.score !== undefined ? (seg.score * 100).toFixed(0) + '%' : '';
+
+          row.appendChild(time);
+          row.appendChild(label);
+          row.appendChild(score);
+          segmentsList.appendChild(row);
+        });
+      } else {
+        segmentsSection.style.display = 'none';
+      }
+
+      // Features
+      if (data.features) {
+        featureCentroid.textContent = data.features.spectral_centroid_mean !== undefined 
+          ? data.features.spectral_centroid_mean.toFixed(4) : '—';
+        featureZcr.textContent = data.features.zcr_mean !== undefined 
+          ? data.features.zcr_mean.toFixed(4) : '—';
+        featureRms.textContent = data.features.rms_mean !== undefined 
+          ? data.features.rms_mean.toFixed(4) : '—';
+      }
+
+      // Reset details
+      detailsToggle.classList.remove('expanded');
+      detailsContent.classList.remove('visible');
+
+      resultCard.classList.add('visible');
+    }
+
+    // Poll for result
+    async function pollResult(taskId) {
+      const maxAttempts = 60;
+      const interval = 1500;
+      let attempts = 0;
+      const statusMessages = ['Uploading…', 'Analyzing…', 'Processing…'];
+
+      while (attempts < maxAttempts) {
+        showStatus(statusMessages[Math.min(attempts, statusMessages.length - 1)]);
+
+        try {
+          const response = await fetch(`${RESULT_URL}/${taskId}`);
           const data = await response.json();
-          console.log('Backend health:', data);
-          if (!data.ffmpeg_available) {
-            showWarning('⚠️ YouTube processing may not be available. File uploads should work.');
+
+          if (response.status === 200 && data.status === 'done') {
+            return data;
+          } else if (response.status === 500 || data.status === 'error') {
+            throw new Error(data.error || 'Analysis failed');
+          } else if (response.status === 404) {
+            throw new Error('Task not found');
+          }
+          // Still processing, continue polling
+        } catch (err) {
+          if (err.message !== 'Task not found' && !err.message.includes('Analysis failed')) {
+            // Network error, keep trying
+          } else {
+            throw err;
           }
         }
-      } catch (err) {
-        console.warn('Backend health check failed:', err);
-        showWarning('⚠️ Could not verify backend connection. The app may still work.');
-      }
-    }
 
-    // Helper: Escape HTML to prevent XSS
-    function escapeHtml(str) {
-      const div = document.createElement("div");
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    // Helper: Show warning message
-    function showWarning(message) {
-      const existingWarning = document.querySelector('.warning-box');
-      if (existingWarning) return; // Don't show multiple warnings
-      
-      const warningDiv = document.createElement('div');
-      warningDiv.className = 'warning-box';
-      warningDiv.innerHTML = `${escapeHtml(message)}`;
-      warningDiv.style.cssText = `
-        background: #fffbeb;
-        border-left: 4px solid #f59e0b;
-        color: #92400e;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        font-size: 0.85rem;
-        margin-bottom: 1rem;
-      `;
-      document.querySelector('.header').after(warningDiv);
-    }
-
-    // Helper: Show error message
-    function showError(message) {
-      resultArea.innerHTML = `
-        <div class="error-box">
-          ⚠️ <strong>Error:</strong> ${escapeHtml(message)}
-        </div>
-      `;
-    }
-
-    // Helper: Show loading state with progress
-    function showLoading(message = "Analyzing...") {
-      resultArea.innerHTML = `
-        <div style="text-align: center; padding: 2rem;">
-          <div class="spinner" style="margin: 0 auto 1rem; width: 40px; height: 40px; border-width: 4px;"></div>
-          <p style="color: #4a5568; font-weight: 500;">${escapeHtml(message)}</p>
-          <p style="color: #718096; font-size: 0.85rem; margin-top: 0.5rem;">
-            This may take a moment for YouTube videos...
-          </p>
-        </div>
-      `;
-    }
-
-    // Helper: Render success result
-    function showResult(data) {
-      const badgeClass = data.prediction === "music" ? "badge-music" : "badge-speech";
-      const predictionEmoji = data.prediction === "music" ? "🎵" : "📿";
-      const predictionText = data.prediction === "music" ? "Music Detected" : "Safe (Quran/Speech)";
-
-      let detailRows = "";
-      
-      // Confidence
-      if (data.confidence !== undefined) {
-        const pct = (data.confidence * 100).toFixed(1);
-        detailRows += `
-          <tr>
-            <td>🎯 Confidence</td>
-            <td><strong>${pct}%</strong></td>
-          </tr>`;
+        await new Promise(resolve => setTimeout(resolve, interval));
+        attempts++;
       }
 
-      // Processing time
-      if (data.processing_time_seconds !== undefined) {
-        detailRows += `
-          <tr>
-            <td>⏱️ Processing Time</td>
-            <td>${data.processing_time_seconds.toFixed(2)}s</td>
-          </tr>`;
-      }
-
-      // Key features
-      if (data.features) {
-        const { spectral_centroid, tempo, chroma_std } = data.features;
-        if (spectral_centroid) {
-          detailRows += `
-            <tr>
-              <td>🎼 Spectral Centroid</td>
-              <td>${spectral_centroid.toFixed(1)} Hz</td>
-            </tr>`;
-        }
-        if (tempo) {
-          detailRows += `
-            <tr>
-              <td>🥁 Tempo</td>
-              <td>${tempo.toFixed(1)} BPM</td>
-            </tr>`;
-        }
-        if (chroma_std) {
-          detailRows += `
-            <tr>
-              <td>🎹 Harmonic Variation</td>
-              <td>${chroma_std.toFixed(4)}</td>
-            </tr>`;
-        }
-      }
-
-      // Source info
-      if (data.filename) {
-        detailRows += `
-          <tr>
-            <td>📄 File</td>
-            <td style="word-break:break-all;">${escapeHtml(data.filename)}</td>
-          </tr>`;
-      }
-      if (data.url) {
-        detailRows += `
-          <tr>
-            <td>🔗 URL</td>
-            <td style="word-break:break-all;">${escapeHtml(data.url)}</td>
-          </tr>`;
-      }
-
-      const rawJson = JSON.stringify(data, null, 2);
-
-      resultArea.innerHTML = `
-        <div class="result-card">
-          <div>
-            <span class="prediction-badge ${badgeClass}">
-              ${predictionEmoji} ${predictionText}
-            </span>
-          </div>
-
-          <table class="details-table">
-            <tbody>${detailRows}</tbody>
-          </table>
-
-          <details>
-            <summary>📊 Show Full JSON Response</summary>
-            <pre>${escapeHtml(rawJson)}</pre>
-          </details>
-        </div>
-      `;
+      throw new Error('Analysis timed out. Please try again.');
     }
 
-    // Main: Analyze button click handler
-    analyzeBtn.addEventListener("click", async () => {
-      resultArea.innerHTML = "";
-
-      const file = fileInput.files[0];
+    // Main analyze function
+    async function analyzeAudio() {
       const url = urlInput.value.trim();
 
-      if (!file && !url) {
-        showError("Please upload a file or enter a URL before clicking Analyze.");
+      if (!selectedFile && !url) {
+        showError('Please upload a file or enter a URL.');
         return;
       }
 
-      // Show loading state
       analyzeBtn.disabled = true;
-      analyzeBtn.innerHTML = '<span class="spinner"></span>Analyzing...';
-      
-      const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-      showLoading(isYouTube ? "Downloading and analyzing YouTube video..." : "Analyzing audio...");
+      analyzeBtn.textContent = 'Analyzing…';
+      showStatus('Uploading…');
 
       try {
         const formData = new FormData();
-        if (file) {
-          formData.append("file", file);
+        if (selectedFile) {
+          formData.append('file', selectedFile);
         } else {
-          formData.append("url", url);
+          formData.append('url', url);
         }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
 
         const response = await fetch(API_URL, {
-          method: "POST",
-          body: formData,
-          signal: controller.signal
+          method: 'POST',
+          body: formData
         });
 
-        clearTimeout(timeoutId);
-
-        let data;
-        try {
-          data = await response.json();
-        } catch {
-          showError(`Server returned an unexpected response (HTTP ${response.status}). Please try again.`);
-          return;
-        }
+        const data = await response.json();
 
         if (!response.ok) {
-          // Extract error message from various response formats
-          const msg = data.detail || data.error || data.message || `HTTP error ${response.status}`;
-          showError(msg);
-          return;
+          throw new Error(data.error || data.detail || `Error ${response.status}`);
         }
 
-        showResult(data);
+        // Handle async task pattern (202 response)
+        if (response.status === 202 && data.task_id) {
+          const result = await pollResult(data.task_id);
+          showResult(result);
+        } else {
+          // Direct result (legacy)
+          showResult(data);
+        }
 
       } catch (err) {
-        console.error("Fetch error:", err);
-        
-        if (err.name === 'AbortError') {
-          showError("Request timed out. The video may be too long or the server is busy. Please try a shorter video.");
-        } else if (err.message && err.message.includes('Failed to fetch')) {
-          showError(
-            "Could not reach the backend server. Please ensure:\n" +
-            "1. The server is running\n" +
-            "2. You're accessing from the correct URL\n" +
-            "3. No firewall is blocking the connection"
-          );
-        } else {
-          showError(`An error occurred: ${err.message || 'Unknown error'}`);
-        }
+        showError(err.message || 'An error occurred');
       } finally {
         analyzeBtn.disabled = false;
-        analyzeBtn.innerHTML = "🔍 Analyze Audio";
+        analyzeBtn.textContent = 'Analyze Audio';
       }
-    });
+    }
 
-    // UX: Clear URL when file is selected (and vice-versa)
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files.length > 0) {
-        urlInput.value = "";
-      }
-    });
+    // Event listeners
+    analyzeBtn.addEventListener('click', analyzeAudio);
 
-    urlInput.addEventListener("input", () => {
-      if (urlInput.value.trim()) {
-        fileInput.value = "";
-      }
-    });
-
-    // Check health on load
+    // Initialize
     checkHealth();
   </script>
 </body>
