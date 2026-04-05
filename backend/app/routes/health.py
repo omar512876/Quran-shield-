@@ -42,21 +42,3 @@ async def health_check(request: Request):
             "youtube_download": ffmpeg_available,
         }
     }
-
-
-@router.get("/")
-async def root():
-    """
-    Root endpoint with API information.
-    """
-    return {
-        "service": settings.APP_NAME,
-        "version": settings.VERSION,
-        "docs": "/docs",
-        "frontend": "/app",
-        "health": "/health",
-        "api": {
-            "analyze": "POST /api/analyze",
-            "description": "Upload audio file or provide YouTube URL for analysis"
-        }
-    }

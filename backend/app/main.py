@@ -107,6 +107,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
+    root_path=""
 )
 
 # Configure CORS
@@ -121,6 +122,18 @@ app.add_middleware(
 # Register routes FIRST (so they take precedence over static files)
 app.include_router(health_router)
 app.include_router(audio_router)
+
+# Add root endpoint to serve frontend
+@app.get("/", response_class=None)
+async def root():
+    """Serve the frontend application."""
+    from fastapi.responses import FileResponse
+    frontend_file = project_root / "frontend" / "index.html"
+    if frontend_file.exists():
+        return FileResponse(path=frontend_file, media_type="text/html")
+    # Fallback to app mount
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/app/index.html")
 
 # ============================================================================
 # FRONTEND STATIC FILES MOUNTING
