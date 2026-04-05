@@ -81,6 +81,7 @@ def _analyze_audio(audio_signal: np.ndarray, sr: int) -> Dict:
     rms_energies = []
     zcrs = []
     mfcc_deltas = []
+    frame_timestamps = []  # Track frame start times for warmup filtering
     
     # Extract features for each frame
     for i in range(n_frames):
@@ -95,6 +96,10 @@ def _analyze_audio(audio_signal: np.ndarray, sr: int) -> Dict:
         # Pad frame if needed
         if len(frame) < frame_length_samples:
             frame = np.pad(frame, (0, frame_length_samples - len(frame)), mode='constant')
+        
+        # Track frame timestamp
+        frame_start_time = i * hop_length_sec
+        frame_timestamps.append(frame_start_time)
         
         # Spectral centroid
         centroid = librosa.feature.spectral_centroid(y=frame, sr=sr)
@@ -123,6 +128,7 @@ def _analyze_audio(audio_signal: np.ndarray, sr: int) -> Dict:
     rms_energies = np.array(rms_energies)
     zcrs = np.array(zcrs)
     mfcc_deltas = np.array(mfcc_deltas)
+    frame_timestamps = np.array(frame_timestamps)
     
     actual_n_frames = len(spectral_centroids)
     
@@ -155,8 +161,9 @@ def _analyze_audio(audio_signal: np.ndarray, sr: int) -> Dict:
     
     # Compute per-frame suspicion score
     # Mean of absolute z-scores across 5 features, then sigmoid transformation
+    # BUG 4 FIX: Shift sigmoid activation point higher (2.5 instead of 2)
     def sigmoid_transform(x: float) -> float:
-        return 1.0 / (1.0 + np.exp(-x + 2))
+        return 1.0 / (1.0 + np.exp(-x + 2.5))
     
     suspicion_scores = []
     for i in range(actual_n_frames):
@@ -173,9 +180,29 @@ def _analyze_audio(audio_signal: np.ndarray, sr: int) -> Dict:
     
     suspicion_scores = np.array(suspicion_scores)
     
-    # Flag frames where suspicion score > 0.55
-    threshold = 0.55
-    flagged_frames = np.where(suspicion_scores > threshold)[0]
+    # BUG 4 FIX: Raise threshold from 0.55 to 0.72
+    threshold = 0.72
+    
+    # BUG 3 FIX: Minimum RMS energy threshold to skip silence/breath frames
+    min_rms_threshold = 0.008
+    
+    # BUG 2 FIX: First-window warmup exclusion (skip first 1.0 second)
+    warmup_time = 1.0
+    
+    # Flag frames where suspicion score > threshold, excluding warmup and silence
+    flagged_frames = []
+    for i in range(actual_n_frames):
+        # BUG 2: Skip frames in the first 1.0 second (warmup period)
+        if frame_timestamps[i] < warmup_time:
+            continue
+        # BUG 3: Skip near-silence frames (breath pauses)
+        if rms_energies[i] < min_rms_threshold:
+            continue
+        # Check suspicion threshold
+        if suspicion_scores[i] > threshold:
+            flagged_frames.append(i)
+    
+    flagged_frames = np.array(flagged_frames)
     
     if len(flagged_frames) == 0:
         return {
@@ -217,9 +244,19 @@ def _analyze_audio(audio_signal: np.ndarray, sr: int) -> Dict:
         end_time = round((end_frame + 1) * hop_length_sec + (frame_length_sec - hop_length_sec), 4)
         end_time = min(end_time, round(total_duration, 4))
         
+        # BUG 1 FIX: Filter out zero-duration segments (< 0.3 seconds)
+        segment_duration = end_time - start_time
+        if segment_duration < 0.3:
+            continue
+        
         # Calculate segment score (mean of suspicion scores in segment)
         segment_suspicion = suspicion_scores[start_frame:end_frame + 1]
         segment_score = float(np.mean(segment_suspicion))
+        
+        # BUG 1/4 FIX: Only include segments with score >= threshold
+        if segment_score < threshold:
+            continue
+        
         segment_scores.append(segment_score)
         
         # Determine label based on which z-score dominates
@@ -251,8 +288,11 @@ def _analyze_audio(audio_signal: np.ndarray, sr: int) -> Dict:
     # Calculate overall confidence (mean suspicion score of flagged segments)
     confidence = float(np.mean(segment_scores)) if segment_scores else 0.0
     
-    # Build summary string
+    # VERDICT LOGIC FIX: Only suspicious if at least 1 valid segment remains
+    # (score >= 0.72 AND duration >= 0.3s)
     n_segments = len(result_segments)
+    
+    # Build summary string
     if n_segments == 0:
         summary = "No suspicious sounds detected."
     elif n_segments == 1:
